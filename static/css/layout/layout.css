@@ -1,0 +1,99 @@
+body { font-family: 'Pretendard', sans-serif; }
+html { overflow-y: scroll; }
+
+.sticky-sidebar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 1.5rem;
+}
+
+.sticky-sidebar::-webkit-scrollbar { width: 4px; }
+.sticky-sidebar::-webkit-scrollbar-thumb { background-color: #495057; border-radius: 4px; }
+
+.led-clock-card {
+    background-color: #080808 !important;
+    border: 1px solid #333 !important;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 1) !important;
+    font-family: 'D2Coding', monospace !important;
+    color: #666;
+}
+
+.led-container {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+.led-days {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-align: left;
+    padding-right: 15px;
+    border-right: 1px solid #222;
+    line-height: 1.2;
+    color: #555;
+}
+
+.led-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.led-date {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    letter-spacing: 2px;
+    color: #cccccc;
+}
+.led-date span { display: inline-block; }
+
+.label-on { font-size: 0.7rem; color: #999; margin-right: 5px; }
+
+.led-time {
+    font-size: 2.4rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+.led-active {
+    color: #ffffff !important;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+}
+
+.led-config-btn {
+    color: #333 !important;
+    transition: color 0.3s;
+}
+.led-config-btn:hover { color: #ff0000 !important; }
+
+.form-control:focus, .form-select:focus, .btn:focus {
+    outline: none !important; box-shadow: none !important; border-color: var(--bs-border-color) !important;
+}
+
+.handle { cursor: grab !important; position: relative; z-index: 10; touch-action: none; }
+.handle:active { cursor: grabbing !important; }
+.fc-event { cursor: pointer; }
+
+body.modal-open {
+    padding-right: 0 !important;
+    overflow: hidden !important;
+}
+
+body.modal-open .fixed-top, 
+body.modal-open .sticky-top {
+    padding-right: 0 !important;
+}

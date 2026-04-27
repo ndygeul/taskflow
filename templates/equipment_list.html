@@ -1,0 +1,177 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/history/equipment.css">
+
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold m-0"><i class="bi bi-server text-primary me-2"></i>장비 파트 교체 이력</h4>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-body-tertiary">
+        <div class="card-body">
+            <form id="equipmentForm" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">교체일</label>
+                    <input type="date" class="form-control form-control-sm" id="eqDate" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">구분</label>
+                    <select class="form-select form-select-sm" id="eqCategorySel" onchange="toggleDirectInput('eqCategory')">
+                        <option value="">선택</option><option value="서버">서버</option><option value="스토리지">스토리지</option><option value="네트워크">네트워크</option><option value="DIRECT">직접 입력</option>
+                    </select>
+                    <div class="input-group input-group-sm d-none" id="eqCategoryGroup">
+                        <input type="text" class="form-control" id="eqCategory" placeholder="구분 입력">
+                        <button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('eqCategory')"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">벤더</label>
+                    <select class="form-select form-select-sm" id="eqVendorSel" onchange="toggleDirectInput('eqVendor')">
+                        <option value="">선택</option><option value="HP">HP</option><option value="DELL">DELL</option><option value="DIRECT">직접 입력</option>
+                    </select>
+                    <div class="input-group input-group-sm d-none" id="eqVendorGroup">
+                        <input type="text" class="form-control" id="eqVendor" placeholder="벤더 입력">
+                        <button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('eqVendor')"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">교체 항목</label>
+                    <select class="form-select form-select-sm" id="eqPartSel" onchange="toggleDirectInput('eqPart')">
+                        <option value="">선택</option><option value="HDD">HDD</option><option value="SSD">SSD</option><option value="Memory">Memory</option><option value="FAN">FAN</option><option value="HBA">HBA</option><option value="CPU">CPU</option><option value="Board">Board</option><option value="Power Supply">Power Supply</option><option value="Cache Battery">Cache Battery</option><option value="DIRECT">직접 입력</option>
+                    </select>
+                    <div class="input-group input-group-sm d-none" id="eqPartGroup">
+                        <input type="text" class="form-control" id="eqPart" placeholder="항목 입력">
+                        <button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('eqPart')"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold">규격</label>
+                    <input type="text" class="form-control form-control-sm" id="eqSpec" placeholder="예: 32GB">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">장비명</label>
+                    <input type="text" class="form-control form-control-sm" id="eqName" placeholder="예: DB-SERVER-01">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold">수량</label>
+                    <input type="number" class="form-control form-control-sm" id="eqQty" value="1" min="1">
+                </div>
+                <div class="col-md-11 mt-2 align-self-stretch d-flex flex-column">
+                    <label class="form-label small fw-bold text-primary">작업 상세 내역</label>
+                    <textarea class="form-control form-control-sm flex-grow-1" id="eqDesc" rows="3" style="resize: none;" placeholder="상세 내역을 작성하세요."></textarea>
+                </div>
+                <div class="col-md-1 mt-2 align-self-stretch d-flex flex-column">
+                    <label class="form-label small d-block">&nbsp;</label>
+                    <button type="button" class="btn btn-primary btn-sm fw-bold w-100 flex-grow-1" id="btnSaveEq"><i class="bi bi-plus-lg"></i> 등록</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-end mb-2">
+        <div class="small text-muted mb-1">총 <span id="totalCount" class="fw-bold text-primary">0</span>건</div>
+        <div class="d-flex gap-2 w-50 justify-content-end">
+            <button type="button" class="btn btn-outline-primary btn-sm fw-bold shadow-sm" id="btnShowStats"><i class="bi bi-graph-up-arrow"></i> 통계</button>
+            <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm" id="btnExportExcel"><i class="bi bi-file-earmark-excel"></i> 엑셀 다운로드</button>
+            <div class="input-group input-group-sm w-50">
+                <input type="text" id="searchInput" class="form-control" placeholder="장비명, 항목 검색">
+                <button class="btn btn-secondary" id="btnSearch"><i class="bi bi-search"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="mb-2"><ul class="pagination pagination-sm justify-content-center m-0" id="pagination"></ul></nav>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-scroll-container" id="tableContainer">
+            <table class="table table-hover table-striped align-middle text-center m-0 text-nowrap">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 5%;">No</th>
+                        <th style="width: 10%;">교체일</th>
+                        <th style="width: 8%;">구분</th>
+                        <th style="width: 8%;">벤더</th>
+                        <th style="width: 15%;">장비명</th>
+                        <th style="width: 10%;">항목</th>
+                        <th style="width: 8%;">규격</th>
+                        <th style="width: 5%;">수량</th>
+                        <th style="width: 10%;">상세 내역</th>
+                        <th style="width: 8%;">관리</th>
+                    </tr>
+                </thead>
+                <tbody id="equipmentTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="viewDescModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-secondary text-white">
+                <h6 class="modal-title fw-bold"><i class="bi bi-file-text"></i> 작업 상세 내역</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body"><div id="viewDescContent" class="desc-cell p-3 border rounded bg-body-tertiary text-light" style="min-height: 150px;"></div></div>
+            <div class="modal-footer p-2"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="statsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h6 class="modal-title fw-bold"><i class="bi bi-pie-chart-fill text-info"></i> 교체 이력 통계 대시보드</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-body-tertiary">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body"><h6 class="fw-bold text-center mb-3">장비 구분별 교체 비율</h6><div style="position: relative; height: 300px; width: 100%;"><canvas id="chartCategory"></canvas></div></div></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body"><h6 class="fw-bold text-center mb-3">벤더별 작업 비율</h6><div style="position: relative; height: 300px; width: 100%;"><canvas id="chartVendor"></canvas></div></div></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body"><h6 class="fw-bold text-center mb-3">최근 12개월 교체 추이</h6><div style="position: relative; height: 300px; width: 100%;"><canvas id="chartMonthly"></canvas></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editEqModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white"><h6 class="modal-title fw-bold"><i class="bi bi-pencil-square"></i> 장비 이력 수정</h6><button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="editEqId">
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="form-label small fw-bold">교체일</label><input type="date" class="form-control form-control-sm" id="editEqDate"></div>
+                    <div class="col-md-3"><label class="form-label small fw-bold">구분</label><select class="form-select form-select-sm" id="editEqCategorySel" onchange="toggleDirectInput('editEqCategory')"><option value="">선택</option><option value="서버">서버</option><option value="스토리지">스토리지</option><option value="네트워크">네트워크</option><option value="DIRECT">직접 입력</option></select><div class="input-group input-group-sm d-none" id="editEqCategoryGroup"><input type="text" class="form-control" id="editEqCategory"><button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('editEqCategory')"><i class="bi bi-x-lg"></i></button></div></div>
+                    <div class="col-md-6"><label class="form-label small fw-bold">벤더</label><select class="form-select form-select-sm" id="editEqVendorSel" onchange="toggleDirectInput('editEqVendor')"><option value="">선택</option><option value="HP">HP</option><option value="DELL">DELL</option><option value="DIRECT">직접 입력</option></select><div class="input-group input-group-sm d-none" id="editEqVendorGroup"><input type="text" class="form-control" id="editEqVendor"><button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('editEqVendor')"><i class="bi bi-x-lg"></i></button></div></div>
+                    <div class="col-md-6"><label class="form-label small fw-bold">장비명</label><input type="text" class="form-control form-control-sm" id="editEqName"></div>
+                    <div class="col-md-6"><label class="form-label small fw-bold">교체 항목</label><select class="form-select form-select-sm" id="editEqPartSel" onchange="toggleDirectInput('editEqPart')"><option value="">선택</option><option value="HDD">HDD</option><option value="SSD">SSD</option><option value="Memory">Memory</option><option value="FAN">FAN</option><option value="HBA">HBA</option><option value="CPU">CPU</option><option value="Board">Board</option><option value="Power Supply">Power Supply</option><option value="Cache Battery">Cache Battery</option><option value="DIRECT">직접 입력</option></select><div class="input-group input-group-sm d-none" id="editEqPartGroup"><input type="text" class="form-control" id="editEqPart"><button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('editEqPart')"><i class="bi bi-x-lg"></i></button></div></div>
+                    <div class="col-md-4"><label class="form-label small fw-bold">규격</label><input type="text" class="form-control form-control-sm" id="editEqSpec"></div>
+                    <div class="col-md-2"><label class="form-label small fw-bold">수량</label><input type="number" class="form-control form-control-sm" id="editEqQty" min="1"></div>
+                    <div class="col-md-12"><label class="form-label small fw-bold text-info">작업 상세 내역</label><textarea class="form-control form-control-sm" id="editEqDesc" rows="3"></textarea></div>
+                </div>
+            </div>
+            <div class="modal-footer p-2"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button><button type="button" class="btn btn-info btn-sm text-white fw-bold" id="btnUpdateEq">수정 저장</button></div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/vendor/jquery/chart.js"></script>
+<script src="/static/js/history/equipment.js"></script>
+{% endblock %}

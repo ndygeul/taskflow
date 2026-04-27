@@ -1,0 +1,375 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/flatpickr/css/flatpickr.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/calendar/calendar.css">
+{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-3">
+    <div class="card-body p-3">
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-3 border-bottom pb-2 small">
+            <span class="fw-bold text-secondary"><i class="bi bi-tags-fill"></i> 구분:</span>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#3788d8;"></span><span>기본</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#dc3545;"></span><span>중요</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#198754;"></span><span>작업</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#fd7e14;"></span><span>TD작업</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#6f42c1;"></span><span>정기배포</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#0dcaf0;"></span><span>정기점검</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#6c757d;"></span><span>연차/휴가</span></div>
+            <div class="d-flex align-items-center"><span class="rounded-circle d-inline-block me-1" style="width:10px; height:10px; background-color:#ffc107;"></span><span>기타</span></div>
+        </div>
+        <div id='calendar'></div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-bordered mb-0">
+            <colgroup>
+                <col style="width: 140px; background-color: var(--bs-light);">
+                <col>
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th class="text-center align-middle p-3">
+                        <div class="fw-bold">오늘 일정</div>
+                        <div class="small text-secondary mt-1" id="labelToday">-</div>
+                    </th>
+                    <td class="align-middle p-3">
+                        <div id="listToday" class="text-muted">일정이 없습니다.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center align-middle p-3">
+                        <div class="fw-bold">내일 일정</div>
+                        <div class="small text-secondary mt-1" id="labelTomorrow">-</div>
+                    </th>
+                    <td class="align-middle p-3">
+                        <div id="listTomorrow" class="text-muted">일정이 없습니다.</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-calendar-event"></i> 일정 상세</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h5 id="viewEventTitle" class="fw-bold mb-1"></h5>
+                    <div class="d-flex align-items-center text-secondary small">
+                        <i class="bi bi-clock me-1"></i>
+                        <span id="viewEventTime"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <span id="viewEventBadge" class="badge"></span>
+                    <span id="viewEventRecBadge" class="badge bg-secondary d-none"><i class="bi bi-arrow-repeat"></i> 반복 일정</span>
+                </div>
+                <div class="card bg-light border-0">
+                    <div class="card-body p-3">
+                        <pre id="viewEventDesc" class="mb-0" style="white-space: pre-wrap; font-family: var(--bs-body-font-family); color: #555; font-size: 0.95rem;"></pre>
+                    </div>
+                </div>
+                <div id="viewDeleteSection" class="mt-3 p-3 border rounded bg-danger-subtle d-none">
+                    <label class="form-label small fw-bold text-danger">정말 삭제하시겠습니까? 비밀번호를 입력하세요.</label>
+                    <div class="input-group input-group-sm mb-2">
+                        <input type="password" class="form-control" id="viewDeletePass" placeholder="비밀번호 입력">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-danger btn-sm flex-grow-1" id="btnRealDelete">이 일정만 삭제</button>
+                        <button class="btn btn-dark btn-sm flex-grow-1 d-none" id="btnRealDeleteAll"><i class="bi bi-arrow-repeat"></i> 전체 반복 일정 삭제</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnViewDeleteToggle"><i class="bi bi-trash"></i> 삭제</button>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="btnViewEdit"><i class="bi bi-pencil"></i> 수정</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalTitle">일정 등록</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="eventId">
+                <input type="hidden" id="eventGroupId">
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">제목</label>
+                            <input type="text" class="form-control" id="eventTitle" placeholder="일정 제목 입력" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="eventAllDay">
+                                <label class="form-check-label small fw-bold" for="eventAllDay">시간미정 (종일)</label>
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-7">
+                                <label class="form-label small fw-bold">시작 날짜</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-date" id="eventStartDate">
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-bold">시작 시간</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-time" id="eventStartTime">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-7">
+                                <label class="form-label small fw-bold">종료 날짜</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-date" id="eventEndDate">
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-bold">종료 시간</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-time" id="eventEndTime">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">구분(색상)</label>
+                                <select class="form-select form-select-sm" id="eventColor">
+                                    <option value="#3788d8" selected>기본</option>
+                                    <option value="#dc3545">중요</option>
+                                    <option value="#198754">작업</option>
+                                    <option value="#fd7e14">TD작업</option>
+                                    <option value="#6f42c1">정기배포</option>
+                                    <option value="#0dcaf0">정기점검</option>
+                                    <option value="#6c757d">연차/휴가</option>
+                                    <option value="#ffc107">기타</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 d-flex flex-column">
+                        <div class="mb-3 flex-grow-1 d-flex flex-column">
+                            <label class="form-label small fw-bold">상세 내용</label>
+                            <textarea class="form-control flex-grow-1" id="eventDesc" rows="1" style="resize: none;" placeholder="상세 내용을 입력하세요."></textarea>
+                        </div>
+
+                        <div class="mb-3 p-2 bg-warning-subtle border border-warning rounded d-none" id="editRecurringOption">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chkEditAll">
+                                <label class="form-check-label small fw-bold" for="chkEditAll">
+                                    전체 반복 일정에 이 내용을 적용합니다.<br>
+                                    <span class="text-muted x-small">(날짜는 유지되고 시간, 제목, 내용이 변경됩니다)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="p-2 bg-light border rounded mt-auto">
+                            <label class="form-label small fw-bold text-danger mb-1"><i class="bi bi-key-fill"></i> 비밀번호 (필수)</label>
+                            <input type="password" class="form-control form-control-sm" id="eventPass" placeholder="수정/삭제 시 사용할 비밀번호" required>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnSave">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="recurringModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-arrow-repeat"></i> 고정 일정(루틴) 등록</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">제목</label>
+                            <input type="text" class="form-control" id="recTitle" placeholder="예: 주간회의, 월급날" required>
+                        </div>
+
+                        <div class="card bg-light text-dark border-0 mb-3">
+                            <div class="card-body p-3">
+                                <label class="form-label small fw-bold">반복 규칙</label>
+                                <div class="d-flex gap-3 mb-2 small">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recType" id="typeWeekly" value="weekly" checked>
+                                        <label class="form-check-label" for="typeWeekly">매주 (요일)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recType" id="typeMonthlyDate" value="monthly_date">
+                                        <label class="form-check-label" for="typeMonthlyDate">매월 (날짜)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recType" id="typeMonthlyWeekday" value="monthly_weekday">
+                                        <label class="form-check-label" for="typeMonthlyWeekday">매월 (요일)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recType" id="typeYearly" value="yearly">
+                                        <label class="form-check-label" for="typeYearly">매년</label>
+                                    </div>
+                                </div>
+                                <hr class="my-2 text-secondary opacity-25">
+
+                                <div id="areaWeekly">
+                                    <select class="form-select form-select-sm" id="recWeeklyVal">
+                                        <option value="0">매주 월요일</option><option value="1">매주 화요일</option>
+                                        <option value="2">매주 수요일</option><option value="3">매주 목요일</option>
+                                        <option value="4">매주 금요일</option><option value="5">매주 토요일</option>
+                                        <option value="6">매주 일요일</option>
+                                    </select>
+                                </div>
+                                <div id="areaMonthlyDate" class="d-none">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">매월</span>
+                                        <select class="form-select" id="recMonthlyDateVal">
+                                            {% for i in range(1, 32) %}<option value="{{ i }}">{{ i }}일</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-text x-small" style="color: #000 !important;">* 선택한 일자가 없는 달은 해당 월의 마지막 날(말일)에 등록됩니다.</div>
+                                </div>
+                                <div id="areaMonthlyWeekday" class="d-none">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">매월</span>
+                                        <select class="form-select" id="recMonthlyWeekOrder">
+                                            <option value="1">첫째주</option><option value="2">둘째주</option>
+                                            <option value="3">셋째주</option><option value="4">넷째주</option>
+                                            <option value="5">마지막주</option>
+                                        </select>
+                                        <select class="form-select" id="recMonthlyWeekdayVal">
+                                            <option value="0">월요일</option><option value="1">화요일</option>
+                                            <option value="2">수요일</option><option value="3">목요일</option>
+                                            <option value="4">금요일</option><option value="5">토요일</option><option value="6">일요일</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="areaYearly" class="d-none">
+                                    <div class="d-flex gap-3 mb-2 small align-items-center">
+                                        <span class="fw-bold text-secondary">달력 구분:</span>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="recCalendarType" id="calSolar" value="solar" checked>
+                                            <label class="form-check-label" for="calSolar">양력</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="recCalendarType" id="calLunar" value="lunar">
+                                            <label class="form-check-label" for="calLunar">음력</label>
+                                        </div>
+                                    </div>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">매년</span>
+                                        <select class="form-select" id="recYearlyMonth">
+                                            {% for i in range(1, 13) %}<option value="{{ i }}">{{ i }}월</option>{% endfor %}
+                                        </select>
+                                        <select class="form-select" id="recYearlyDate">
+                                            {% for i in range(1, 32) %}<option value="{{ i }}">{{ i }}일</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="recAllDay">
+                                <label class="form-check-label small fw-bold" for="recAllDay">시간 미정 (하루 종일)</label>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-7">
+                                <label class="form-label small fw-bold">시작 일자 (생성 시작)</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-date" id="recStartDate">
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-bold">시작 시간</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-time" id="recStartTime" value="09:00">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-7">
+                                <label class="form-label small fw-bold">종료 일자 (생성 종료)</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-date" id="recEndDate">
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-bold">종료 시간</label>
+                                <input type="text" class="form-control form-control-sm flatpickr-time" id="recEndTime" value="10:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 d-flex flex-column">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">구분(색상)</label>
+                            <select class="form-select form-select-sm" id="recColor">
+                                <option value="#3788d8" selected>기본</option>
+                                <option value="#dc3545">중요</option>
+                                <option value="#198754">작업</option>
+                                <option value="#fd7e14">팀작업</option>
+                                <option value="#6f42c1">정기배포</option>
+                                <option value="#0dcaf0">정기점검</option>
+                                <option value="#6c757d">연차/휴가</option>
+                                <option value="#ffc107">기타</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3 flex-grow-1 d-flex flex-column">
+                            <label class="form-label small fw-bold">상세 내용</label>
+                            <textarea class="form-control flex-grow-1" id="recDesc" rows="1" style="resize: none;" placeholder="상세 내용을 입력하세요."></textarea>
+                        </div>
+
+                        <div class="p-2 bg-light border rounded mt-auto">
+                            <label class="form-label small fw-bold text-danger mb-1"><i class="bi bi-key-fill"></i> 비밀번호 (필수)</label>
+                            <input type="password" class="form-control form-control-sm" id="recPass" placeholder="관리 비밀번호" required>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-dark btn-sm" id="btnRecSave">일괄 생성</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/vendor/flatpickr/js/flatpickr.min.js"></script>
+<script src="/static/vendor/flatpickr/l10n/ko.js"></script>
+<script src="/static/vendor/fullcalendar/index.global.min.js"></script>
+<script src="/static/vendor/lunar/korean-lunar-calendar.min.js"></script>
+
+<script src="/static/js/calendar/utils.js"></script>
+<script src="/static/js/calendar/summary.js"></script>
+<script src="/static/js/calendar/recurring.js"></script>
+<script src="/static/js/calendar/events.js"></script>
+<script src="/static/js/calendar/calendar.js"></script>
+{% endblock %}

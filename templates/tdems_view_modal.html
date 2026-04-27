@@ -1,0 +1,101 @@
+<div class="container-fluid p-0">
+    <div class="card mb-3 bg-transparent border-secondary">
+        <div class="card-header bg-dark text-white fw-bold">기본 정보</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3"><label class="small text-muted">설비바코드</label><div class="fw-bold">{{ asset.equip_barcode or '-' }}</div></div>
+                <div class="col-md-3"><label class="small text-muted">위치</label><div class="fw-bold text-info">{{ asset.rack_location or '-' }} <span class="text-light ms-1">/ {{ asset.mounted_location or '-' }}</span></div></div>
+                <div class="col-md-3"><label class="small text-muted">호스트명</label><div class="fw-bold fs-5 text-warning">{{ asset.hostname }}</div></div>
+                <div class="col-md-3">
+                    <label class="small text-muted">상태</label>
+                    <div>
+                        {% if asset.status == 'ON' %}<span class="badge bg-success">ON</span>{% elif asset.status == 'OFF' %}<span class="badge bg-danger">OFF</span>{% endif %}
+                        {% if asset.facility_status %}<span class="badge bg-secondary ms-1">{{ asset.facility_status }}</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <hr class="border-secondary my-3">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="small text-muted mb-1">IP 주소</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if asset.ip %}
+                            {% for ip in asset.ip.split(',') %}
+                                <span class="badge bg-dark border border-secondary p-2">{{ ip.strip() }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3 bg-transparent border-secondary">
+        <div class="card-header bg-dark text-white fw-bold">하드웨어 스펙</div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="small text-muted">제조사 / 모델</label><div>{{ asset.manufacturer }} <span class="mx-1">/</span> {{ asset.model_name }}</div></div>
+                <div class="col-md-3"><label class="small text-muted">S/N</label><div>{{ asset.serial_number or '-' }}</div></div>
+                <div class="col-md-3"><label class="small text-muted">OS</label><div>{{ asset.os or '-' }}</div></div>
+                <div class="col-md-3"><label class="small text-muted">CPU</label><div>{{ asset.cpu_type or '-' }} ({{ asset.cpu_qty }}ea / {{ asset.cpu_core }}C)</div></div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4"><div class="p-2 border border-secondary rounded bg-dark bg-opacity-10 h-100"><label class="fw-bold mb-1 text-primary">Memory</label>{% for mem in asset.memories %}<div class="d-flex justify-content-between border-bottom border-secondary py-1 small"><span>{{ mem.capacity }}</span><span class="text-muted">x {{ mem.quantity }}</span></div>{% else %}<div class="text-muted small">정보 없음</div>{% endfor %}</div></div>
+                <div class="col-md-4"><div class="p-2 border border-secondary rounded bg-dark bg-opacity-10 h-100"><label class="fw-bold mb-1 text-success">SSD</label>{% for ssd in asset.ssds %}<div class="d-flex justify-content-between border-bottom border-secondary py-1 small"><span>{{ ssd.capacity }}</span><span class="text-muted">x {{ ssd.quantity }}</span></div>{% else %}<div class="text-muted small">정보 없음</div>{% endfor %}</div></div>
+                <div class="col-md-4"><div class="p-2 border border-secondary rounded bg-dark bg-opacity-10 h-100"><label class="fw-bold mb-1 text-secondary">HDD</label>{% for hdd in asset.hdds %}<div class="d-flex justify-content-between border-bottom border-secondary py-1 small"><span>{{ hdd.capacity }}</span><span class="text-muted">x {{ hdd.quantity }}</span></div>{% else %}<div class="text-muted small">정보 없음</div>{% endfor %}</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card bg-transparent border-secondary h-100">
+                <div class="card-header bg-dark text-white fw-bold">관리 정보</div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm mb-0 small">
+                        <tbody>
+                            <tr><td class="text-muted w-25">팀/서비스</td><td>{{ asset.own_team }} / {{ asset.unit_service }}</td></tr>
+                            <tr><td class="text-muted">용도</td><td>{{ asset.purpose }} ({{ asset.purpose_detail }})</td></tr>
+                            <tr><td class="text-muted">MA</td><td>{{ asset.ma or '-' }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-transparent border-secondary h-100">
+                <div class="card-header bg-dark text-white fw-bold">자산 이력</div>
+                <div class="card-body p-0">
+                    <textarea class="form-control bg-transparent border-0 small h-100 text-light" rows="5" readonly style="resize: none; min-height: 120px;">{{ asset.asset_history }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-transparent border-secondary">
+        <div class="card-body py-2">
+            <div class="row text-center" style="font-size: 0.85rem;">
+                <div class="col-md-3 border-end border-secondary">
+                    <span class="text-muted d-block small">최초 등록일시</span>
+                    <span class="text-info">{{ asset.created_at.strftime('%Y-%m-%d %H:%M:%S') if asset.created_at else '-' }}</span>
+                </div>
+                <div class="col-md-3 border-end border-secondary">
+                    <span class="text-muted d-block small">등록자</span>
+                    <span class="text-light">{{ asset.created_user or '-' }}</span>
+                </div>
+                <div class="col-md-3 border-end border-secondary">
+                    <span class="text-muted d-block small">최종 수정일시</span>
+                    <span class="text-warning">{{ asset.updated_at.strftime('%Y-%m-%d %H:%M:%S') if asset.updated_at else '-' }}</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted d-block small">수정자</span>
+                    <span class="text-light">{{ asset.updated_user or '-' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <input type="hidden" id="modalAssetId" value="{{ asset.asset_id }}">
+</div>

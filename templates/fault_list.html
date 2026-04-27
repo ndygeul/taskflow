@@ -1,0 +1,188 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/history/fault.css">
+
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold m-0"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>장애 발생 이력 관리</h4>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-body-tertiary">
+        <div class="card-body">
+            <form id="faultForm" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">발생일자</label>
+                    <input type="date" class="form-control form-control-sm" id="ftDate" required>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">시스템</label>
+                    <select class="form-select form-select-sm" id="ftSystemSel" onchange="toggleDirectInput('ftSystem')">
+                        <option value="">선택</option>
+                        <option value="SYSTEM">SYSTEM</option>
+                        <option value="DIRECT">직접 입력</option>
+                    </select>
+                    <div class="input-group input-group-sm d-none" id="ftSystemGroup">
+                        <input type="text" class="form-control" id="ftSystem" placeholder="시스템">
+                        <button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('ftSystem')"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">분야</label>
+                    <select class="form-select form-select-sm" id="ftFieldSel" onchange="toggleDirectInput('ftField')">
+                        <option value="">선택</option>
+                        <option value="SYSTEM1">SYSTEM1</option><option value="SYSTEM2">SYSTEM2</option><option value="SYSTEM3">SYSTEM3</option>
+                        <option value="SYSTEM4">SYSTEM4</option><option value="SYSTEM5">SYSTEM5</option><option value="DIRECT">직접 입력</option>
+                    </select>
+                    <div class="input-group input-group-sm d-none" id="ftFieldGroup">
+                        <input type="text" class="form-control" id="ftField" placeholder="분야">
+                        <button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('ftField')"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">장비명</label>
+                    <input type="text" class="form-control form-control-sm" id="ftName" placeholder="예: nms-m205">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">확인자</label>
+                    <input type="text" class="form-control form-control-sm" id="ftChecker" placeholder="예: 홍길동">
+                </div>
+
+                <div class="col-md-2 text-center pb-1">
+                    <div class="form-check form-check-inline m-0">
+                        <input class="form-check-input" type="checkbox" id="ftEmergency">
+                        <label class="form-check-label small fw-bold text-danger" for="ftEmergency">비상출동여부</label>
+                    </div>
+                </div>
+
+                <div class="col-md-11 mt-2 align-self-stretch d-flex flex-column">
+                    <label class="form-label small fw-bold text-danger">장애 상세 내역</label>
+                    <textarea class="form-control form-control-sm flex-grow-1" id="ftDesc" rows="3" style="resize: none;"></textarea>
+                </div>
+                
+                <div class="col-md-1 mt-2 align-self-stretch d-flex flex-column">
+                    <label class="form-label small d-block">&nbsp;</label>
+                    <button type="button" class="btn btn-danger btn-sm fw-bold w-100 flex-grow-1" id="btnSaveFt"><i class="bi bi-plus-lg"></i> 등록</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-end mb-2">
+        <div class="small text-muted mb-1">총 <span id="totalCount" class="fw-bold text-danger">0</span>건</div>
+        <div class="d-flex gap-2 w-50 justify-content-end">
+            <button type="button" class="btn btn-outline-danger btn-sm fw-bold shadow-sm" id="btnShowStats"><i class="bi bi-graph-up-arrow"></i> 통계</button>
+            <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm" id="btnExportExcel"><i class="bi bi-file-earmark-excel"></i> 엑셀 다운로드</button>
+            <div class="input-group input-group-sm w-50">
+                <input type="text" id="searchInput" class="form-control" placeholder="장비명, 장애내용 검색">
+                <button class="btn btn-secondary" id="btnSearch"><i class="bi bi-search"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="mb-2"><ul class="pagination pagination-sm justify-content-center m-0" id="pagination"></ul></nav>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-scroll-container" id="tableContainer">
+            <table class="table table-hover table-striped align-middle text-center m-0 text-nowrap">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 5%;">No</th>
+                        <th style="width: 10%;">발생일자</th>
+                        <th style="width: 10%;">시스템</th>
+                        <th style="width: 10%;">분야</th>
+                        <th style="width: 15%;">장비명</th>
+                        <th style="width: 10%;">확인자</th> <th style="width: 8%;">비상출동</th>
+                        <th style="width: 10%;">장애 상세 내역</th>
+                        <th style="width: 8%;">관리</th>
+                    </tr>
+                </thead>
+                <tbody id="faultTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="viewDescModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-secondary text-white">
+                <h6 class="modal-title fw-bold"><i class="bi bi-file-text"></i> 장애 상세 내역</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body"><div id="viewDescContent" class="desc-cell p-3 border rounded bg-body-tertiary text-light" style="min-height: 150px;"></div></div>
+            <div class="modal-footer p-2"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editFtModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h6 class="modal-title fw-bold"><i class="bi bi-pencil-square"></i> 장애 이력 수정</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editFtId">
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="form-label small fw-bold">발생일자</label><input type="date" class="form-control form-control-sm" id="editFtDate"></div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">시스템</label>
+                        <select class="form-select form-select-sm" id="editFtSystemSel" onchange="toggleDirectInput('editFtSystem')"><option value="">선택</option><option value="5G NMS">5G NMS</option><option value="DIRECT">직접 입력</option></select>
+                        <div class="input-group input-group-sm d-none" id="editFtSystemGroup"><input type="text" class="form-control" id="editFtSystem"><button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('editFtSystem')"><i class="bi bi-x-lg"></i></button></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">분야</label>
+                        <select class="form-select form-select-sm" id="editFtFieldSel" onchange="toggleDirectInput('editFtField')"><option value="">선택</option><option value="관제">관제</option><option value="시설">시설</option><option value="품질">품질</option><option value="정합">정합</option><option value="공동망">공동망</option><option value="DIRECT">직접 입력</option></select>
+                        <div class="input-group input-group-sm d-none" id="editFtFieldGroup"><input type="text" class="form-control" id="editFtField"><button class="btn btn-outline-secondary" type="button" onclick="cancelDirectInput('editFtField')"><i class="bi bi-x-lg"></i></button></div>
+                    </div>
+                    <div class="col-md-3"><label class="form-label small fw-bold">장비명</label><input type="text" class="form-control form-control-sm" id="editFtName"></div>
+                    
+                    <div class="col-md-3"><label class="form-label small fw-bold">확인자</label><input type="text" class="form-control form-control-sm" id="editFtChecker"></div> <div class="col-md-3 d-flex align-items-end mb-1">
+                        <div class="form-check m-0"><input class="form-check-input" type="checkbox" id="editFtEmergency"><label class="form-check-label small fw-bold text-danger">비상출동</label></div>
+                    </div>
+                    
+                    <div class="col-md-12"><label class="form-label small fw-bold text-danger">장애 상세 내역</label><textarea class="form-control form-control-sm" id="editFtDesc" rows="5"></textarea></div>
+                </div>
+            </div>
+            <div class="modal-footer p-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger btn-sm text-white fw-bold" id="btnUpdateFt">수정 저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="statsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h6 class="modal-title fw-bold"><i class="bi bi-bar-chart-fill"></i> 장애 발생 통계 대시보드</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-body-tertiary">
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h6 class="fw-bold text-center mb-3">시스템별 장애 비율</h6><div style="position: relative; height: 300px;"><canvas id="chartSystem"></canvas></div></div></div></div>
+                    <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h6 class="fw-bold text-center mb-3">분야별 장애 분포</h6><div style="position: relative; height: 300px;"><canvas id="chartField"></canvas></div></div></div></div>
+                    <div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h6 class="fw-bold text-center mb-3">최근 12개월 장애 추이</h6><div style="position: relative; height: 300px;"><canvas id="chartMonthly"></canvas></div></div></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/vendor/jquery/chart.js"></script>
+<script src="/static/js/history/fault.js"></script>
+{% endblock %}

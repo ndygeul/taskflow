@@ -1,0 +1,31 @@
+{% for post in posts %}
+<div class="search-item {% if not loop.last %}border-bottom{% endif %}">
+    <a href="{{ post.url }}" class="search-item-title">
+        {% if keyword %}
+            {{ post.title | replace(keyword, '<span class="highlight">' + keyword + '</span>') | safe }}
+        {% else %}
+            {{ post.title }}
+        {% endif %}
+        
+        {% if post.has_file %}
+        <i class="bi bi-paperclip text-secondary ms-1 small"></i>
+        {% endif %}
+        {% if post.is_secret %}
+        <i class="bi bi-lock-fill text-warning ms-1 small"></i>
+        {% endif %}
+    </a>
+    
+    <div class="search-item-content">
+        {% if keyword %}
+            {{ post.content | striptags | truncate(200) | replace(keyword, '<span class="highlight">' + keyword + '</span>') | safe }}
+        {% else %}
+            {{ post.content | striptags | truncate(200) }}
+        {% endif %}
+    </div>
+
+    <div class="search-item-meta">
+        <span class="me-3">{{ post.writer }}</span>
+        <span><i class="bi bi-clock"></i> {{ post.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+    </div>
+</div>
+{% endfor %}

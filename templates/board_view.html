@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/board/board.css">
+<link rel="stylesheet" href="/static/css/board/board_view.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    
+    <div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="fw-bold mb-2">{{ post.title }}</h2>
+            
+            <div class="d-flex align-items-center gap-3 flex-wrap text-secondary small">
+                <div class="d-flex gap-2">
+                    <span class="badge bg-secondary-subtle text-secondary border" style="font-size: 8pt;">{{ board.name }}</span>
+                    {% if post.category %}
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size: 8pt;">{{ post.category }}</span>
+                    {% endif %}
+                    {% if post.is_notice %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 8pt;">공지사항</span>{% endif %}
+                    {% if post.is_secret %}<span class="badge bg-warning text-dark" style="font-size: 8pt;"><i class="bi bi-lock-fill"></i> 비밀글</span>{% endif %}
+                </div>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="border-start mx-1" style="height: 12px;"></span>
+                    <span class="fw-bold text-body mx-1" style="font-size: 10pt;">{{ post.writer }}</span>
+                    {% if post.ip_address %}
+                        {% set ips = post.ip_address.split('.') %}
+                        {% if ips|length == 4 %}
+                            <span class="text-secondary opacity-75" style="font-size: 10pt; letter-spacing: 1px;">(☆.☆.☆.{{ ips[3] }})</span>
+                        {% endif %}
+                    {% endif %}
+                    <span class="border-start mx-1" style="height: 12px;"></span>
+                    <span style="font-size: 10pt;">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex align-items-center gap-2">
+            <a href="/board/{{ board.code }}" class="btn btn-outline-secondary btn-sm fw-bold px-3"><i class="bi bi-list"></i> 목록</a>
+            <div class="vr mx-1 text-secondary"></div>
+            <button class="btn btn-success btn-sm px-3 fw-bold" onclick="openEditModal()"><i class="bi bi-pencil-fill me-1"></i> 수정</button>
+            <button class="btn btn-danger btn-sm px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash-fill me-1"></i> 삭제</button>
+            <div class="vr mx-1 text-secondary"></div>
+            <a href="/board/write/{{ board.code }}" class="btn btn-primary btn-sm px-3 fw-bold"><i class="bi bi-pencil-square me-1"></i> 작성하기</a>
+        </div>
+    </div>
+
+    <div class="post-content mb-5 ck-content-viewer" style="min-height: 300px;">{{ post.content | safe }}</div>
+    
+    <div id="ezk-attachment-view" style="display: none;" class="bg-dark border border-secondary mt-4 p-4 rounded shadow-sm">
+        <div class="small fw-bold text-secondary mb-3"><i class="bi bi-paperclip"></i> 첨부파일</div>
+        <div id="ezk-attachment-list" class="d-flex flex-wrap gap-3"></div>
+    </div>
+
+    <div class="mt-5 mb-5" id="postNavContainer" style="display: none;">
+        <div class="border-top border-bottom border-secondary-subtle">
+            <div class="row g-0">
+                <div class="col-md-6 border-end border-secondary-subtle p-3 position-relative nav-item-box" id="prevPostArea">
+                    <a href="#" class="d-flex align-items-center text-decoration-none text-body nav-hover h-100" id="prevPostLink">
+                        <i class="bi bi-chevron-left text-secondary me-3 fs-4"></i>
+                        <div class="d-flex flex-column text-truncate">
+                            <span class="small text-secondary mb-1" style="font-size: 10pt;">이전글</span>
+                            <span class="fw-bold text-truncate stretched-link" id="prevPostTitle">없음</span>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 p-3 position-relative nav-item-box" id="nextPostArea">
+                    <a href="#" class="d-flex align-items-center justify-content-end text-end text-decoration-none text-body nav-hover h-100" id="nextPostLink">
+                        <div class="d-flex flex-column text-truncate align-items-end">
+                            <span class="small text-secondary mb-1" style="font-size: 10pt;">다음글</span>
+                            <span class="fw-bold text-truncate stretched-link" id="nextPostTitle">없음</span>
+                        </div>
+                        <i class="bi bi-chevron-right text-secondary ms-3 fs-4"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">수정 확인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="small text-secondary mb-2">수정하려면 비밀번호를 입력하세요.</p>
+                <input type="password" class="form-control" id="editPassword" placeholder="비밀번호 입력">
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnRealEdit">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">삭제 확인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="small text-secondary mb-2">삭제하려면 비밀번호를 입력하세요.</p>
+                <input type="password" class="form-control" id="deletePassword" placeholder="비밀번호 입력">
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btnRealDelete">삭제하기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.currentPostId = '{{ post.id }}';
+    window.currentBoardCode = "{{ board.code }}";
+</script>
+<script src="/static/js/board/board_view.js"></script>
+<script src="/static/js/board/board_secret.js"></script>
+{% endblock %}

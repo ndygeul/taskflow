@@ -1,0 +1,25 @@
+.tooltip-inner {
+    max-width: 500px !important;
+    text-align: left !important; 
+    padding: 10px 14px;
+    white-space: pre-wrap;
+}
+.lunar-date {
+    font-size: 0.75em;
+    color: #adb5bd;
+    margin-left: 4px;
+    font-weight: normal;
+}
+.fc-day-sun .fc-daygrid-day-number {
+    color: #dc3545 !important;
+    text-decoration: none;
+}
+.holiday-target {
+    color: #dc3545 !important; 
+    font-weight: bold;
+}
+/* 달력 셀 내부 정렬 */
+.fc-daygrid-day-top {
+    flex-direction: row;
+    align-items: center;
+}

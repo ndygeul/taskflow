@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/journal/journal.css">
+<link rel="stylesheet" href="/static/css/journal/journal_list.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-journal-bookmark-fill fs-3 text-primary me-2"></i>
+            <h3 class="fw-bold m-0" style="letter-spacing: -0.5px;">업무일지</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="input-group" style="width: 300px;">
+                <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                <input type="text" class="form-control bg-body-tertiary border-start-0" id="searchKeyword" 
+                       placeholder="제목+내용 검색" 
+                       value="{{ keyword if keyword else '' }}" 
+                       onkeypress="if(event.key==='Enter') searchJournal()">
+                <button class="btn btn-outline-secondary" type="button" onclick="searchJournal()">검색</button>
+            </div>
+            <a href="/journal/write" class="btn btn-primary fw-bold px-4">
+                <i class="bi bi-pencil-fill me-2"></i>작성하기
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="journalTable">
+                    <thead class="bg-body-tertiary table-dark">
+                        <tr class="text-center text-secondary small fw-bold text-uppercase" style="height: 45px; border-top: 1px solid var(--bs-border-color);">
+                            <th class="align-middle" style="width: 100px; font-size: 10pt;">번호</th>
+                            <th class="align-middle" style="width: 300px; font-size: 10pt;">주간 근무자</th>
+                            <th class="align-middle" style="width: 150px; font-size: 10pt;">야간 근무자</th>
+                            <th class="align-middle" style="font-size: 10pt;">제목</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-body">
+                        {% if journals %}
+                            {% for j in journals %}
+                            <tr onclick="location.href='/journal/view/{{ j.id }}'" style="cursor: pointer; height: 55px;" class="border-bottom {% if j.is_notice %}notice-highlight fw-bold{% endif %}">
+                                <td class="text-center fw-medium">
+                                    {% if j.is_notice %}
+                                        <span class="badge bg-danger fs-6 px-2 py-1">공지</span>
+                                    {% else %}
+                                        {{ total_count - ((current_page - 1) * 20) - loop.index0 }}
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-white text-dark border fw-normal fw-bold px-2 py-2" style="font-size: 9pt;">{{ j.writer_day }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if j.writer_night %}
+                                        <span class="badge bg-secondary text-white border fw-normal fw-bold px-2 py-2" style="font-size: 9pt;">{{ j.writer_night }}</span>
+                                    {% else %}
+                                        <span class="text-secondary opacity-25">-</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td class="text-center">
+                                    <span class="fw-bold text-body text-decoration-none title-hover">{{ j.title }}</span>
+                                    {% if j.is_secret %}
+                                        <i class="bi bi-lock-fill text-secondary ms-2" title="비밀글"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="py-5 text-center text-muted">
+                                    <div class="mb-3"><i class="bi bi-inbox fs-1 opacity-25"></i></div>
+                                    {% if keyword %}
+                                        '{{ keyword }}'에 대한 검색 결과가 없습니다.
+                                    {% else %}
+                                        등록된 업무일지가 없습니다.
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm m-0">
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/journal?page=1{% if keyword %}&q={{ keyword }}{% endif %}" title="처음"><i class="bi bi-chevron-bar-left"></i></a>
+                </li>
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/journal?page={{ current_page - 1 }}{% if keyword %}&q={{ keyword }}{% endif %}" aria-label="Previous"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == current_page %}active{% endif %}">
+                    <a class="page-link border-0 rounded-circle mx-1 {% if p == current_page %}bg-primary text-white shadow-sm{% else %}bg-transparent text-secondary{% endif %}" 
+                       href="/journal?page={{ p }}{% if keyword %}&q={{ keyword }}{% endif %}" 
+                       style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                       {{ p }}
+                    </a>
+                </li>
+                {% endfor %}
+
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/journal?page={{ current_page + 1 }}{% if keyword %}&q={{ keyword }}{% endif %}" aria-label="Next"><i class="bi bi-chevron-right"></i></a>
+                </li>
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/journal?page={{ total_pages }}{% if keyword %}&q={{ keyword }}{% endif %}" title="마지막"><i class="bi bi-chevron-bar-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script src="/static/js/journal/journal_list.js"></script>
+{% endblock %}

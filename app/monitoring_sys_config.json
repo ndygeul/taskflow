@@ -1,0 +1,4 @@
+[
+    { "id": "bash_chk_1", "title": "PING", "logPath": "scripts/bash/result/sys/once/ping.log" },
+    { "id": "bash_chk_2", "title": "PROCESS", "logPath": "scripts/bash/result/sys/once/process.log" }
+]

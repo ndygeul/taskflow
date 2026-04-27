@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/all.min.css">
+<link rel="stylesheet" href="/static/css/monitoring/monitoring.css">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper p-0">
+    <div class="mon-header">
+        <div>
+            <h1 style="margin:0; font-size: 1.8rem;">TM SCRIPT MONITORING</h1>
+            <span style="font-size:0.9rem; color:var(--text-sub);">Bash Script Automation Dashboard</span>
+        </div>
+        <div class="header-right">
+            <button class="mon-btn-settings" onclick="openSettingsModal()"><i class="fas fa-cog"></i> 화면설정</button>
+            <div class="sound-controls">
+                <i id="btn-mute" class="fas fa-volume-up"></i>
+                <input type="range" id="mon-range" class="mon-range" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+    </div>
+
+    <div id="vol-tooltip">볼륨: 50</div>
+    <div id="toast-container"></div>
+    <audio id="alarm-sound" src="/static/sounds/alarm.wav" preload="auto"></audio>
+    
+    <div id="grid-container" class="dashboard-grid"></div>
+    <div id="tooltip"></div>
+    <div id="modal-container"></div>
+    
+    <div id="settings-overlay">
+        <div class="settings-window">
+            <div class="settings-header">
+                <span><i class="fas fa-sliders-h"></i> 카드 표시 설정</span>
+                <i class="fas fa-times window-btn" onclick="closeSettingsModal()" style="width:24px; height:24px; text-align:center; line-height:24px; cursor:pointer;"></i>
+            </div>
+            <div class="settings-body" id="settings-list"></div>
+            <div class="settings-footer">
+                <div class="footer-left-btns">
+                    <button class="btn-mini" onclick="setAllVisibility(true)"><i class="fas fa-check-double"></i> 전체 활성화</button>
+                    <button class="btn-mini" onclick="setAllVisibility(false)"><i class="fas fa-ban"></i> 전체 비활성화</button>
+                </div>
+                <button class="search-btn" onclick="closeSettingsModal()" style="padding:5px 12px; font-size:0.8rem;">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/monitoring/tm_dashboard_core.js"></script>
+<script src="/static/js/monitoring/tm_modal_logic.js"></script>
+<script src="/static/js/monitoring/tm_ui_common.js"></script>
+{% endblock %}

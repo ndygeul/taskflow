@@ -1,0 +1,46 @@
+html, body, main, .main-content, .content, #content, #page-content-wrapper {
+    overflow-y: hidden !important;
+}
+
+.noc-terminal-wrapper {
+    background-color: #050505;
+    border-radius: 8px;
+    font-family: 'D2Coding', 'Courier New', monospace;
+    color: #00ff00;
+    
+    height: calc(100vh - 150px) !important;
+    overflow-y: auto !important; 
+    
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    margin-bottom: 0 !important;
+}
+
+.noc-terminal-wrapper::-webkit-scrollbar { width: 8px; display: block; }
+.noc-terminal-wrapper::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+.term-header {
+    position: sticky;
+    top: 0;
+    background-color: #050505; 
+    z-index: 10; 
+
+    padding: 25px 25px 15px 25px; 
+    
+    border-bottom: 1px dashed #333;
+}
+
+#sys-log-output, #tm-log-output {
+    padding: 10px 25px 25px 25px;
+}
+
+.term-title-sys { font-size: 1.5rem; font-weight: bold; color: #ffb300; }
+.term-title-tm { font-size: 1.5rem; font-weight: bold; color: #00e5ff; }
+
+.term-summary { font-size: 1.1rem; margin-top: 10px; color: #aaa; }
+
+.term-error { color: #ff1744; font-weight: bold; }
+.term-warn { color: #ffab00; }
+.term-info { color: #00e5ff; }
+.blink-cursor { animation: blink 1s step-end infinite; }
+
+@keyframes blink { 50% { opacity: 0; } }

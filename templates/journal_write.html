@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/flatpickr/css/flatpickr.min.css">
+<link rel="stylesheet" href="/static/vendor/flatpickr/css/themes/dark.css">
+<link rel="stylesheet" href="/static/vendor/d2coding/d2coding.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/journal/journal.css">
+<link rel="stylesheet" href="/static/css/journal/journal_write.css">
+
+<style>
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-body py-3 border-bottom">
+            <h4 class="fw-bold m-0"><i class="bi bi-pencil-square me-2 text-primary"></i> 업무일지 {% if mode == 'edit' %}수정{% else %}작성{% endif %}</h4>
+        </div>
+        <div class="card-body p-4">
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">업무 일자<span class="required-star">*</span></label>
+                    <input type="text" class="form-control flatpickr-date" id="workDate" value="{{ journal.work_date if journal else '' }}" placeholder="YYYY-MM-DD">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">주간 근무자<span class="required-star">*</span></label>
+                    <input type="text" class="form-control" id="writerDay" value="{{ journal.writer_day if journal else today_day_workers }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">야간 근무자</label>
+                    <input type="text" class="form-control" id="writerNight" value="{{ journal.writer_night if journal else today_night_workers }}">
+                </div>
+                <div class="col-md-3" id="passwordWrapper">
+                    <label class="form-label small fw-bold">비밀번호<span class="required-star">*</span></label>
+                    <input type="password" class="form-control" id="password" placeholder="수정/삭제 시 필요">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label small fw-bold">제목</label>
+                <input type="text" class="form-control fw-bold" id="title" value="{{ journal.title if journal else '' }}">
+            </div>
+
+            <div class="mb-4 p-3 bg-body-tertiary rounded border border-secondary-subtle">
+                <label class="form-label fw-bold mb-2">게시글 옵션</label>
+                <div class="d-flex gap-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_notice" {% if journal and journal.is_notice %}checked{% endif %}>
+                        <label class="form-check-label fw-bold text-danger" for="is_notice">
+                            <i class="bi bi-megaphone-fill me-1"></i> 공지사항 (상단 고정)
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_secret" {% if journal and journal.is_secret %}checked{% endif %}>
+                        <label class="form-check-label fw-bold text-warning" for="is_secret">
+                            <i class="bi bi-lock-fill me-1"></i> 비밀글 (비밀번호 확인 후 열람)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3"><div class="journal-header" data-bs-toggle="collapse" data-bs-target="#collapseDay"><span><i class="bi bi-sun-fill me-2 text-warning"></i>주간 업무(09:00 ~ 18:00) 진행 사항 및 처리 사항</span><i class="bi bi-chevron-down toggle-icon"></i></div><div class="collapse show" id="collapseDay"><div class="mt-2"><textarea id="summernoteDay">{{ journal.content_day if journal else '' }}</textarea></div></div></div>
+            <div class="mb-3"><div class="journal-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseHandover"><span><i class="bi bi-megaphone-fill me-2 text-info"></i>전달 사항</span><i class="bi bi-chevron-down toggle-icon"></i></div><div class="collapse" id="collapseHandover"><div class="mt-2"><textarea id="summernoteHandover">{{ journal.content_handover if journal else '' }}</textarea></div></div></div>
+            <div class="mb-3"><div class="journal-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseNight"><span><i class="bi bi-moon-stars-fill me-2 text-secondary"></i>야간 업무(18:00 ~ 09:00) 진행 사항 및 처리 사항</span><i class="bi bi-chevron-down toggle-icon"></i></div><div class="collapse" id="collapseNight"><div class="mt-2"><textarea id="summernoteNight">{{ journal.content_night if journal else '' }}</textarea></div></div></div>
+            <div class="mb-3"><div class="journal-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseEtc"><span><i class="bi bi-three-dots me-2"></i>기타</span><i class="bi bi-chevron-down toggle-icon"></i></div><div class="collapse" id="collapseEtc"><div class="mt-2"><textarea id="summernoteEtc">{{ journal.content_etc if journal else '' }}</textarea></div></div></div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                <a href="/journal" class="btn btn-light border px-4" id="btnCancel">취소</a>
+                <button type="button" class="btn btn-primary px-5 fw-bold" id="btnSave"><i class="bi bi-check-lg"></i> 작성 완료</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="mode" value="{{ mode }}">
+<input type="hidden" id="journalId" value="{{ journal.id if journal else '' }}">
+<input type="hidden" id="lockToken" value="{{ lock_token if lock_token else '' }}">
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/vendor/flatpickr/js/flatpickr.min.js"></script>
+<script src="/static/vendor/flatpickr/l10n/ko.js"></script>
+<script src="/static/vendor/ckeditor5/ckeditor.js?v=superbuild"></script>
+<script src="/static/vendor/ckeditor5/translations/ko.js"></script>
+<script src="/static/js/journal/journal_write.js"></script>
+{% endblock %}

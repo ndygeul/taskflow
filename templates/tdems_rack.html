@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/tdems/tdems_rack.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-0">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold"><i class="bi bi-hdd-rack-fill me-2"></i>{{ group_name }}열 랙 정보</h3>
+        
+        <div class="d-flex align-items-center gap-2">
+            <select class="form-select bg-dark text-light border-secondary" style="width: auto; cursor: pointer;" onchange="if(this.value) window.location.href='/tdems/rack?rack=' + this.value;">
+                <option value="">랙 그룹 이동...</option>
+                {% for rg in rack_groups %}
+                    <option value="{{ rg }}" {% if rg == group_name %}selected{% endif %}>{{ rg }}열</option>
+                {% endfor %}
+            </select>
+            <a href="/tdems/list" class="btn btn-secondary">목록</a>
+        </div>
+    </div>
+
+    <div class="rack-view-wrapper">
+        <button class="scroll-btn left" 
+                onmousedown="startScroll(-1)" 
+                onmouseup="stopScroll()" 
+                onmouseleave="stopScroll()">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+
+        <div class="rack-scroll-container" id="rackContainer">
+            {% for rack_name, slots in racks.items() %}
+            <div class="rack-wrapper">
+                <div class="rack-header">{{ rack_name }}</div>
+                <table class="rack-table">
+                    <tbody>
+                        {% for u in range(max_unit, 0, -1) %}
+                        <tr>
+                            <th>{{ u }}</th>
+                            
+                            {% if slots[u] is sameas false %}
+                                {% elif slots[u] %}
+                                {% set item = slots[u] %}
+                                {% set asset = item.asset %}
+
+                                {% set tooltip_text %}
+{%- if asset.equip_barcode %}설비바코드: {{ asset.equip_barcode }}&#10;{% endif -%}
+{%- if asset.rack_location %}랙/장착: {{ asset.rack_location }} {{ asset.mounted_location }}&#10;{% endif -%}
+{%- if asset.hostname %}호스트명: {{ asset.hostname }}&#10;{% endif -%}
+{%- if asset.asset_type %}종류: {{ asset.asset_type }}&#10;{% endif -%}
+{%- if asset.manufacturer %}제조사: {{ asset.manufacturer }}&#10;{% endif -%}
+{%- if asset.model_name %}모델명: {{ asset.model_name }}&#10;{% endif -%}
+{%- if asset.serial_number %}S/N: {{ asset.serial_number }}&#10;{% endif -%}
+{%- if asset.receipt_ym %}입고년월: {{ asset.receipt_ym }}&#10;{% endif -%}
+{%- if asset.os %}OS: {{ asset.os }}&#10;{% endif -%}
+{%- if asset.cpu_type %}CPU종류: {{ asset.cpu_type }}&#10;{% endif -%}
+{%- if asset.cpu_qty %}CPU수량: {{ asset.cpu_qty }}&#10;{% endif -%}
+{%- if asset.cpu_core %}CPU코어: {{ asset.cpu_core }}&#10;{% endif -%}
+{%- if asset.swap_size %}SWAP: {{ asset.swap_size }}&#10;{% endif -%}
+{%- if asset.memories -%}
+MEMORY: {% for m in asset.memories %}{{ m.capacity }} x {{ m.quantity }}{% if not loop.last %}, {% endif %}{% endfor %}&#10;
+{%- endif -%}
+{%- if asset.ssds -%}
+SSD: {% for s in asset.ssds %}{{ s.capacity }} x {{ s.quantity }}{% if not loop.last %}, {% endif %}{% endfor %}&#10;
+{%- endif -%}
+{%- if asset.hdds -%}
+HDD: {% for h in asset.hdds %}{{ h.capacity }} x {{ h.quantity }}{% if not loop.last %}, {% endif %}{% endfor %}&#10;
+{%- endif -%}
+{%- if asset.ma %}MA: {{ asset.ma }}&#10;{% endif -%}
+{%- if asset.status %}상태: {{ asset.status }}&#10;{% endif -%}
+{%- if asset.facility_status %}설비상태: {{ asset.facility_status }}&#10;{% endif -%}
+{%- if asset.purpose %}용도: {{ asset.purpose }}&#10;{% endif -%}
+{%- if asset.purpose_detail %}상세용도: {{ asset.purpose_detail }}&#10;{% endif -%}
+{%- if asset.own_team %}자산보유팀: {{ asset.own_team }}&#10;{% endif -%}
+{%- if asset.standard_service %}표준서비스: {{ asset.standard_service }}&#10;{% endif -%}
+{%- if asset.unit_service %}단위서비스: {{ asset.unit_service }}{% endif -%}
+                                {% endset %}
+                                
+                                <td rowspan="{{ item.rowspan }}">
+                                    <a href="#" 
+                                       onclick="openDetailModal('{{ asset.asset_id }}'); return false;"
+                                       class="asset-box {{ 'selected' if item.is_selected else '' }} {{ 'status-off' if asset.facility_status == 'OFF' else '' }}"
+                                       title="{{ tooltip_text }}">
+                                        
+                                        <div class="text-truncate w-100 px-1">{{ asset.hostname }}</div>
+                                        {% if item.rowspan > 1 %}
+                                            <div class="small text-muted text-truncate w-100 px-1" style="font-size:0.7em;">
+                                                {{ asset.model_name }}
+                                            </div>
+                                        {% endif %}
+                                    </a>
+                                </td>
+                            
+                            {% else %}
+                                <td></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+            
+            {% if not racks %}
+            <div class="alert alert-warning w-100 text-center m-5">
+                해당 그룹({{ group_name }})에 등록된 랙 정보가 없습니다.
+            </div>
+            {% endif %}
+        </div>
+
+        <button class="scroll-btn right" 
+                onmousedown="startScroll(1)" 
+                onmouseup="stopScroll()" 
+                onmouseleave="stopScroll()">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    </div>
+
+    <div class="modal fade" id="assetDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>장비 상세 정보</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="assetDetailContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-secondary">
+                    <a href="#" id="btnModalEdit" class="btn btn-primary btn-sm px-3"><i class="bi bi-pencil-square me-1"></i>수정</a>
+                    <button type="button" id="btnModalDelete" class="btn btn-danger btn-sm px-3"><i class="bi bi-trash me-1"></i>삭제</button>
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/static/js/tdems/tdems_rack.js"></script>
+{% endblock %}

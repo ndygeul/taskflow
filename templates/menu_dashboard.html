@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/menu_dashboard/menu_dashboard.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-grid-fill fs-3 text-primary me-3"></i>
+            <h3 class="fw-bold m-0">{{ menu.name }}</h3>
+        </div>
+
+        <form action="/menu/{{ menu.code }}" method="get" class="d-flex" style="max-width: 400px;">
+            <div class="input-group" style="width: 300px;">
+                <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                <input type="text" name="q" class="form-control bg-body-tertiary border-start-0" 
+                       placeholder="'{{ menu.name }}' 내 검색" value="{{ keyword if keyword else '' }}">
+                <button class="btn btn-outline-secondary" type="submit">검색</button>
+            </div>
+        </form>
+    </div>
+
+    {% if search_mode %}
+        
+        <div class="search-summary-box">
+            <h5 class="fw-bold mb-3">
+                <span class="text-primary">'{{ keyword }}'</span> 전체 검색 결과 
+                <span class="text-secondary ms-2 small">총 {{ total_count }}건</span>
+            </h5>
+            
+            <div class="d-flex flex-wrap">
+                <button class="search-filter-btn active fw-bold" data-target="all">
+                    전체게시판 {{ total_count }}
+                </button>
+                {% for board_name, count in board_counts.items() %}
+                    <button class="search-filter-btn" data-target="section-{{ loop.index }}">
+                        {{ board_name }} <span class="text-primary ms-1 small">{{ count }}</span>
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if total_count == 0 %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-search fs-1 mb-3 d-block"></i>
+                <h5>검색 결과가 없습니다.</h5>
+                <a href="/menu/{{ menu.code }}" class="btn btn-outline-light btn-sm mt-3">전체 목록으로 돌아가기</a>
+            </div>
+        {% else %}
+            {% for board_name, data in grouped_results.items() %}
+            {% set posts = data.posts %}
+            {% set total = data.total %}
+            {% set b_code = data.code %}
+
+            <div class="mb-5 search-section" id="section-{{ loop.index }}">
+                <div class="d-flex justify-content-between align-items-end border-bottom pb-2 mb-3">
+                    <div class="d-flex align-items-center">
+                        <h5 class="fw-bold m-0 ps-2 border-start border-4 border-primary">
+                            {{ board_name }}
+                        </h5>
+                        <span class="ms-2 badge bg-secondary text-white-50" style="font-size:0.7em;">
+                            {{ total }}건
+                        </span>
+                    </div>
+
+                    {% if total > 5 %}
+                    <div class="d-flex align-items-center gap-2" id="controls-{{ b_code }}">
+                        <button class="mini-page-btn btn-prev" onclick="changePage('{{ b_code }}', -1)" disabled>
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span class="small text-secondary user-select-none">
+                            <span class="curr-page" data-page="1">1</span> / <span class="total-page">{{ ((total - 1) // 5) + 1 }}</span>
+                        </span>
+                        <button class="mini-page-btn btn-next" onclick="changePage('{{ b_code }}', 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="bg-body-tertiary rounded p-3 list-group list-group-flush" id="list-{{ b_code }}">
+                    {% include "snippet_post_list.html" %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <script src="/static/js/menu_dashboard/menu_dashboard.js"></script>
+
+    {% else %}
+        {% if boards %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for item in boards %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0 board-card">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3">
+                        <h5 class="card-title fw-bold m-0">
+                            <a href="/board/{{ item.info.code }}" class="text-decoration-none text-body">
+                                <i class="bi bi-journal-text me-1 text-secondary"></i> {{ item.info.name }}
+                            </a>
+                        </h5>
+                        <a href="/board/{{ item.info.code }}" class="btn btn-sm btn-light rounded-pill px-3 small fw-bold">
+                            더보기 <i class="bi bi-chevron-right" style="font-size: 0.75rem;"></i>
+                        </a>
+                    </div>
+                    <div class="card-body px-3 pb-3 pt-1">
+                        <ul class="list-group list-group-flush">
+                            {% if item.posts %}
+                                {% for post in item.posts %}
+                                <li class="list-group-item px-0 py-2 border-bottom-0 d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center text-truncate" style="max-width: 75%;">
+                                        {% if post.is_notice %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-2" style="font-size: 1.0em;">공지</span>
+                                        {% else %}
+                                            <i class="bi bi-dot text-secondary fs-5"></i>
+                                        {% endif %}
+                                        
+                                        <a href="/board/view/{{ post.id }}" class="post-link small" style="font-size: 1.2em;">
+                                            {% if post.is_secret %}<i class="bi bi-lock-fill text-warning me-1" style="font-size: 1.2em;"></i>{% endif %}
+                                            {{ post.title }}
+                                        </a>
+                                        {% if post.content and ('<img' in post.content or 'download' in post.content) %}
+                                            <i class="bi bi-paperclip text-muted ms-1" style="font-size: 1.2em;"></i>
+                                        {% endif %}
+                                    </div>
+                                    <span class="post-date" style="font-size: 1.2em;">{{ post.created_at.strftime('%m-%d') }}</span>
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="list-group-item text-center text-muted py-4 small">
+                                    등록된 게시글이 없습니다.
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-folder-x fs-1 d-block mb-3 opacity-25"></i>
+            <p>이 메뉴에 소속된 게시판이 없습니다.</p>
+        </div>
+        {% endif %}
+    {% endif %} </div>
+{% endblock %}

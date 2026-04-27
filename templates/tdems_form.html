@@ -1,0 +1,265 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+{% endblock %}
+
+{% block content %}
+<div class="container py-0" style="max-width: 1200px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h3 class="fw-bold">장비 {{ '수정' if mode == 'edit' else '등록' }}</h3>
+        <a href="/tdems/list" class="btn btn-secondary">목록으로</a>
+    </div>
+
+    <form action="/tdems/save" method="post">
+        {% if mode == 'edit' %}
+        <input type="hidden" name="asset_id" value="{{ asset.asset_id }}">
+        {% endif %}
+
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-1"></i>기본 정보</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">설비바코드</label>
+                <input type="text" name="equip_barcode" class="form-control" value="{{ asset.equip_barcode or '' }}" {{ 'readonly' if mode == 'edit' else '' }}>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">랙 위치 / 장착 유닛</label>
+                <div class="input-group">
+                    <input type="text" name="rack_location" class="form-control" placeholder="예: AC06" value="{{ asset.rack_location or '' }}">
+                    <input type="text" name="mounted_location" class="form-control" placeholder="예: 23-28" value="{{ asset.mounted_location or '' }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">호스트명 <span class="text-danger">*</span></label>
+                <input type="text" name="hostname" class="form-control" required value="{{ asset.hostname or '' }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label fw-bold">IP (빈 값 허용 • IPv4만 허용)</label>
+                <div id="ip-container">
+                    {% set ips = asset.ip.split(',') if asset.ip else [] %}
+                    {% if not ips %}
+                    <div class="input-group mb-1">
+                        <input type="text" name="ip[]" class="form-control" placeholder="예: 10.1.23.45">
+                        <button type="button" class="btn btn-outline-secondary" onclick="addIpRow()">+추가</button>
+                    </div>
+                    {% endif %}
+                    
+                    {% for ip in ips %}
+                    <div class="input-group mb-1">
+                        <input type="text" name="ip[]" class="form-control" value="{{ ip.strip() }}">
+                        {% if loop.first %}
+                            <button type="button" class="btn btn-outline-secondary" onclick="addIpRow()">+추가</button>
+                        {% else %}
+                            <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">-</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">종류</label>
+                <select class="form-select" id="sel_asset_type" onchange="syncSelect(this, 'asset_type')">
+                    <option value="">선택</option>
+                    {% for type in ['서버', '스토리지', '라우터', '스위치', '방화벽', '콘솔', '랙'] %}
+                    <option value="{{ type }}">{{ type }}</option>
+                    {% endfor %}
+                    <option value="DIRECT">직접 입력</option>
+                </select>
+                <input type="text" name="asset_type" id="asset_type" class="form-control mt-1" 
+                       style="display:none;" placeholder="종류 입력" value="{{ asset.asset_type or '' }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">제조사</label>
+                <select class="form-select" id="sel_manufacturer" onchange="syncSelect(this, 'manufacturer')">
+                    <option value="">선택</option>
+                    {% for mf in ['DELL', 'HP', 'IBM', 'SUN'] %}
+                    <option value="{{ mf }}">{{ mf }}</option>
+                    {% endfor %}
+                    <option value="DIRECT">직접 입력</option>
+                </select>
+                <input type="text" name="manufacturer" id="manufacturer" class="form-control mt-1" 
+                       style="display:none;" placeholder="제조사 입력" value="{{ asset.manufacturer or '' }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">모델명</label>
+                <input type="text" name="model_name" class="form-control" value="{{ asset.model_name or '' }}">
+            </div>
+             <div class="col-md-3">
+                <label class="form-label">입고년월</label>
+                <input type="month" name="receipt_ym" class="form-control" value="{{ asset.receipt_ym or '' }}">
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-cpu me-1"></i>하드웨어 스펙</h5>
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">OS</label><input type="text" name="os" class="form-control" value="{{ asset.os or '' }}"></div>
+            <div class="col-md-3"><label class="form-label">S/N</label><input type="text" name="serial_number" class="form-control" value="{{ asset.serial_number or '' }}"></div>
+            <div class="col-md-6">
+                <label class="form-label">CPU 정보 (타입 / 수량 / 코어)</label>
+                <div class="input-group">
+                    <input type="text" name="cpu_type" class="form-control" placeholder="Type" value="{{ asset.cpu_type or '' }}">
+                    <input type="number" name="cpu_qty" class="form-control" placeholder="Qty" value="{{ asset.cpu_qty or 0 }}">
+                    <input type="number" name="cpu_core" class="form-control" placeholder="Core" value="{{ asset.cpu_core or 0 }}">
+                </div>
+            </div>
+             <div class="col-md-3"><label class="form-label">SWAP</label><input type="text" name="swap_size" class="form-control" value="{{ asset.swap_size or '' }}"></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Memory</label>
+                <div id="mem-container">
+                    {% set memories = asset.memories if asset and asset.memories else [] %}
+                    {% if not memories %}<div class="input-group mb-2"><input type="text" name="mem_capacity[]" class="form-control" placeholder="용량(GB)"><input type="number" name="mem_qty[]" class="form-control" placeholder="수량" value="1"><button class="btn btn-outline-secondary" disabled>-</button></div>{% endif %}
+                    {% for mem in memories %}
+                    <div class="input-group mb-2"><input type="text" name="mem_capacity[]" class="form-control" placeholder="용량" value="{{ mem.capacity }}"><input type="number" name="mem_qty[]" class="form-control" placeholder="수량" value="{{ mem.quantity }}"><button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">-</button></div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="addSpecRow('mem', '용량(GB)')">+ Memory 추가</button>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">SSD</label>
+                <div id="ssd-container">
+                    {% set ssds = asset.ssds if asset and asset.ssds else [] %}
+                    {% if not ssds %}<div class="input-group mb-2"><input type="text" name="ssd_capacity[]" class="form-control" placeholder="용량"><select name="ssd_unit[]" class="form-select" style="max-width: 80px;"><option>GB</option><option>TB</option></select><input type="number" name="ssd_qty[]" class="form-control" placeholder="수량" value="1"><button class="btn btn-outline-secondary" disabled>-</button></div>{% endif %}
+                    {% for ssd in ssds %}
+                    <div class="input-group mb-2"><input type="text" name="ssd_capacity[]" class="form-control" value="{{ ssd.capacity | replace('GB','') | replace('TB','') }}"><select name="ssd_unit[]" class="form-select" style="max-width: 80px;"><option {% if 'GB' in ssd.capacity %}selected{% endif %}>GB</option><option {% if 'TB' in ssd.capacity %}selected{% endif %}>TB</option></select><input type="number" name="ssd_qty[]" class="form-control" value="{{ ssd.quantity }}"><button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">-</button></div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="addSpecRow('ssd', '용량')">+ SSD 추가</button>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">HDD</label>
+                <div id="hdd-container">
+                    {% set hdds = asset.hdds if asset and asset.hdds else [] %}
+                    {% if not hdds %}<div class="input-group mb-2"><input type="text" name="hdd_capacity[]" class="form-control" placeholder="용량"><select name="hdd_unit[]" class="form-select" style="max-width: 80px;"><option>GB</option><option>TB</option></select><input type="number" name="hdd_qty[]" class="form-control" placeholder="수량" value="1"><button class="btn btn-outline-secondary" disabled>-</button></div>{% endif %}
+                    {% for hdd in hdds %}
+                    <div class="input-group mb-2"><input type="text" name="hdd_capacity[]" class="form-control" value="{{ hdd.capacity | replace('GB','') | replace('TB','') }}"><select name="hdd_unit[]" class="form-select" style="max-width: 80px;"><option {% if 'GB' in hdd.capacity %}selected{% endif %}>GB</option><option {% if 'TB' in hdd.capacity %}selected{% endif %}>TB</option></select><input type="number" name="hdd_qty[]" class="form-control" value="{{ hdd.quantity }}"><button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">-</button></div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="addSpecRow('hdd', '용량')">+ HDD 추가</button>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-clipboard-data me-1"></i>관리 정보</h5>
+        <div class="row g-3 mb-4">
+            
+            <div class="col-md-3">
+                <label class="form-label">MA</label>
+                <select name="ma" class="form-select">
+                    <option value="">선택</option>
+                    <option value="O" {% if asset.ma == 'O' %}selected{% endif %}>O</option>
+                    <option value="X" {% if asset.ma == 'X' %}selected{% endif %}>X</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label fw-bold">전원 (Power)</label>
+                <select name="status" class="form-select">
+                    <option value="">선택</option>
+                    <option value="ON" {% if asset.status == 'ON' %}selected{% endif %}>ON</option>
+                    <option value="OFF" {% if asset.status == 'OFF' %}selected{% endif %}>OFF</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold">상태 (State)</label>
+                <select name="facility_status" class="form-select">
+                    <option value="">선택</option>
+                    {% set fs_options = ['운용', '예비', '유휴', '입고', '고장', '미운용', '불용대기', '불용확정', '직접 입력'] %}
+                    {% for opt in fs_options %}
+                        <option value="{{ opt }}" {% if asset.facility_status == opt %}selected{% endif %}>{{ opt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">용도</label>
+                <select class="form-select" id="sel_purpose" onchange="syncSelect(this, 'purpose')">
+                    <option value="">선택</option>
+                    {% for p in ['AP', 'DB', 'DEV', 'GW', 'WAS', 'WEB'] %}
+                    <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                    <option value="DIRECT">직접 입력</option>
+                </select>
+                <input type="text" name="purpose" id="purpose" class="form-control mt-1" 
+                       style="display:none;" placeholder="용도 입력" value="{{ asset.purpose or '' }}">
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">자산보유팀</label>
+                <select class="form-select" id="sel_own_team" onchange="syncSelect(this, 'own_team')">
+                    <option value="">선택</option>
+                    {% for team in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}
+                    <option value="{{ team }}">{{ team }}</option>
+                    {% endfor %}
+                    <option value="DIRECT">직접 입력</option>
+                </select>
+                <input type="text" name="own_team" id="own_team" class="form-control mt-1" 
+                       style="display:none;" placeholder="팀명 입력" value="{{ asset.own_team or '' }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">표준서비스</label>
+                <select class="form-select" id="sel_standard" onchange="syncSelect(this, 'standard_service')">
+                    <option value="">선택</option>
+                    {% for svc in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}
+                    <option value="{{ svc }}">{{ svc }}</option>
+                    {% endfor %}
+                    <option value="DIRECT">직접 입력</option>
+                </select>
+                <input type="text" name="standard_service" id="standard_service" class="form-control mt-1" 
+                       style="display:none;" placeholder="서비스명 입력" value="{{ asset.standard_service or '' }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">단위서비스</label>
+                <select class="form-select" id="sel_unit" onchange="syncSelect(this, 'unit_service')">
+                    <option value="">선택</option>
+                    {% for svc in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}
+                    <option value="{{ svc }}">{{ svc }}</option>
+                    {% endfor %}
+                    <option value="DIRECT">직접 입력</option>
+                </select>
+                <input type="text" name="unit_service" id="unit_service" class="form-control mt-1" 
+                       style="display:none;" placeholder="단위서비스 입력" value="{{ asset.unit_service or '' }}">
+            </div>
+            
+            <div class="col-12"><label class="form-label">상세 용도</label><input type="text" name="purpose_detail" class="form-control" value="{{ asset.purpose_detail or '' }}"></div>
+        </div>
+        
+        <div class="col-12">
+            <label class="form-label fw-bold">자산 이력 (History)</label>
+            {% if mode == 'edit' %}
+                <textarea class="form-control mb-2" rows="5" readonly style="background-color: var(--bs-tertiary-bg); color: var(--bs-body-color);">{{ asset.asset_history }}</textarea>
+                <textarea name="history_append" class="form-control" rows="3" placeholder="추가할 이력 내용을 입력하세요"></textarea>
+            {% else %}
+                <textarea name="asset_history" class="form-control" rows="5" placeholder="초기 이력을 입력하세요"></textarea>
+            {% endif %}
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <a href="/tdems/list" class="btn btn-light me-md-2">취소</a>
+            <button type="submit" class="btn btn-primary px-5">저장</button>
+        </div>
+    </form>
+</div>
+
+<script src="/static/js/tdems/tdems_form.js"></script>
+{% endblock %}

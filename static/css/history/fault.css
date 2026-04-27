@@ -1,0 +1,11 @@
+html, body { overflow: hidden !important; height: 100% !important; }
+.table-scroll-container {
+    overflow-x: auto; overflow-y: auto; height: calc(100vh - 430px);
+    -ms-overflow-style: none; scrollbar-width: none;
+}
+.table-scroll-container::-webkit-scrollbar { display: none; }
+.table-scroll-container thead th {
+    position: sticky; top: 0; z-index: 90;
+    background-color: #2b2f32; box-shadow: 0 1px 0 #495057; border-bottom: 2px solid #dc3545;
+}
+.desc-cell { white-space: pre-wrap; word-break: break-all; text-align: left; }

@@ -1,0 +1,79 @@
+.nav-hover:hover { background-color: var(--bs-tertiary-bg); transition: background-color 0.2s; }
+
+.post-content {
+    font-family: '굴림', Gulim, sans-serif;
+    font-size: 12px;
+    line-height: 1.4; 
+    letter-spacing: 0.5px;
+    word-break: break-all;
+}
+
+.post-content p { 
+    margin-bottom: 0.1em !important; 
+    min-height: 1.4em; 
+}
+
+.post-content table {
+    font-size: 12px;
+}
+
+#ezk-attachment-view { background-color: #f8f9fa; border-top: 1px solid #dee2e6; }
+[data-bs-theme="dark"] #ezk-attachment-view { background-color: #2b3035; border-top: 1px solid #495057; }
+[data-bs-theme="dark"] .file-link-item div { background-color: #343a40 !important; border-color: #495057 !important; color: #e9ecef !important; }
+
+.post-content pre {
+    background-color: #2b3035;
+    color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: 'D2Coding', 'Consolas', monospace;
+    border: 1px solid #495057;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}
+@media print {
+    body * { visibility: hidden; } 
+    .card, .card * { visibility: visible; } 
+    .card { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important; }
+    .btn, .card-footer, #postNavContainer, .navbar, .col-md-2, .mb-3 { display: none !important; } 
+    .card-header { border-bottom: 2px solid #000 !important; }
+}
+
+.journal-detail-content .card-body table,
+.post-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.journal-detail-content .card-body table, 
+.journal-detail-content .card-body th, 
+.journal-detail-content .card-body td,
+.post-content table, 
+.post-content th, 
+.post-content td {
+    border: 1px solid #dee2e6;
+}
+
+.journal-detail-content .card-body th, 
+.journal-detail-content .card-body td,
+.post-content th,
+.post-content td {
+    padding: 0.5rem;
+}
+
+[data-bs-theme="dark"] .journal-detail-content .card-body table,
+[data-bs-theme="dark"] .journal-detail-content .card-body th,
+[data-bs-theme="dark"] .journal-detail-content .card-body td,
+[data-bs-theme="dark"] .post-content table,
+[data-bs-theme="dark"] .post-content th,
+[data-bs-theme="dark"] .post-content td {
+    border-color: #495057; 
+}
+
+.post-content figure.table {
+    margin: 0 0 1rem 0;
+}

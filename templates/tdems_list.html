@@ -1,0 +1,534 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/tdems/tdems_list.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold m-0"><i class="bi bi-server me-2"></i>장비 목록</h4>
+        <div>
+            <a href="/tdems/write" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>장비 등록
+            </a>
+
+            <button type="button" class="btn btn-secondary ms-2" onclick="showBarcodeModal('CODE1234567890')">
+                <i class="bi bi-geo-alt-fill me-1"></i>위치바코드
+            </button>
+            <button type="button" class="btn btn-secondary ms-2" onclick="showBarcodeModal('CODE1234567890')">
+                <i class="bi bi-upc-scan me-1"></i>장치바코드
+            </button>
+            <button type="button" class="btn btn-secondary ms-2" onclick="openManualBarcodeModal()">
+                    <i class="bi bi-qr-code me-1"></i>바코드 생성
+            </button>
+            
+	        <button type="button" class="btn btn-info ms-2 text-white" id="btnShowStats">
+                <i class="bi bi-pie-chart-fill me-1"></i>통계
+            </button>
+            <a href="/tdems/export?q={{ keyword or '' }}&field={{ field }}&sort={{ sort or '' }}&order={{ order or '' }}&page={{ current_page }}&limit={{ limit }}&s_hostname={{ s_hostname or '' }}&s_ip={{ s_ip or '' }}&s_type={{ s_type or '' }}&s_ma={{ s_ma or '' }}&s_status={{ s_status or '' }}&s_f_status={{ s_f_status or '' }}&s_purpose={{ s_purpose or '' }}&s_team={{ s_team or '' }}&s_svc_std={{ s_svc_std or '' }}&s_svc_unit={{ s_svc_unit or '' }}&s_manuf={{ s_manuf or '' }}&s_model={{ s_model or '' }}&s_os={{ s_os or '' }}" class="btn btn-success ms-2">
+                <i class="bi bi-file-earmark-excel me-1"></i>엑셀
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4 search-card">
+        <div class="card-body py-3">
+            <form action="/tdems/list" method="get" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <select name="field" class="form-select form-select-sm">
+                        <option value="all">전체</option>
+                        <option value="equip_barcode" {% if field == 'equip_barcode' %}selected{% endif %}>설비바코드</option>
+                        <option value="hostname" {% if field == 'hostname' %}selected{% endif %}>호스트명</option>
+                        <option value="ip" {% if field == 'ip' %}selected{% endif %}>IP</option>
+                        <option value="asset_type" {% if field == 'asset_type' %}selected{% endif %}>종류</option>
+                        <option value="ma" {% if field == 'ma' %}selected{% endif %}>MA</option>
+                        <option value="status" {% if field == 'status' %}selected{% endif %}>전원</option>
+                        <option value="facility_status" {% if field == 'facility_status' %}selected{% endif %}>상태</option>
+                        <option value="purpose" {% if field == 'purpose' %}selected{% endif %}>용도</option>
+                        <option value="own_team" {% if field == 'own_team' %}selected{% endif %}>자산보유팀</option>
+                        <option value="standard_service" {% if field == 'standard_service' %}selected{% endif %}>표준서비스</option>
+                        <option value="unit_service" {% if field == 'unit_service' %}selected{% endif %}>단위서비스</option>
+                        <option value="manufacturer" {% if field == 'manufacturer' %}selected{% endif %}>제조사</option>
+                        <option value="os" {% if field == 'os' %}selected{% endif %}>OS</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="q" class="form-control form-select-sm" placeholder="검색어 입력..." value="{{ keyword or '' }}">
+                </div>
+                
+                <div class="col-auto">
+                    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+                    {% if order %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+                    
+                    <button type="button" class="btn btn-info btn-sm px-3 text-white" data-bs-toggle="modal" data-bs-target="#advancedSearchModal">
+                        <i class="bi bi-sliders me-1"></i>상세검색
+                    </button>
+
+                    <button type="submit" class="btn btn-primary btn-sm px-3">검색</button>
+                    <a href="/tdems/list" class="btn btn-secondary btn-sm">초기화</a>
+                </div>
+
+                <div class="col-auto ms-auto d-flex gap-2">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelected()">선택 삭제</button>
+                    
+                    <select name="limit" class="form-select form-select-sm limit-select" onchange="this.form.submit()">
+                        {% for n in [10, 20, 30, 50, 100, 200, 300, 500, 1000] %}
+                            <option value="{{ n }}" {% if limit == n %}selected{% endif %}>{{ n }}/페이지</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="advancedSearchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-sliders me-2"></i>상세 검색</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="/tdems/list" method="get" id="advancedForm">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">호스트명</label>
+                                <input type="text" name="s_hostname" class="form-control form-control-sm" value="{{ s_hostname or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">IP</label>
+                                <input type="text" name="s_ip" class="form-control form-control-sm" value="{{ s_ip or '' }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">종류</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_type_direct', 's_type')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['서버', '스토리지', '라우터', '스위치', '방화벽', '콘솔', '랙'] %}
+                                            <option value="{{ opt }}" {% if s_type == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_type and s_type not in ['서버', '스토리지', '라우터', '스위치', '방화벽', '콘솔', '랙'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_type_direct" class="form-control {{ 'd-none' if not s_type or s_type in ['서버', '스토리지', '라우터', '스위치', '방화벽', '콘솔', '랙'] else '' }}" placeholder="직접 입력" value="{{ s_type if s_type and s_type not in ['서버', '스토리지', '라우터', '스위치', '방화벽', '콘솔', '랙'] else '' }}">
+                                    <input type="hidden" name="s_type" id="s_type" value="{{ s_type or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">모델명</label>
+                                <input type="text" name="s_model" class="form-control form-control-sm" value="{{ s_model or '' }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">MA</label>
+                                <select name="s_ma" class="form-select form-select-sm">
+                                    <option value="">전체</option>
+                                    <option value="O" {% if s_ma == 'O' %}selected{% endif %}>O</option>
+                                    <option value="X" {% if s_ma == 'X' %}selected{% endif %}>X</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">전원</label>
+                                <select name="s_status" class="form-select form-select-sm">
+                                    <option value="">전체</option>
+                                    <option value="ON" {% if s_status == 'ON' %}selected{% endif %}>ON</option>
+                                    <option value="OFF" {% if s_status == 'OFF' %}selected{% endif %}>OFF</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">상태</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_f_status_direct', 's_f_status')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['운용', '예비', '유휴', '입고', '고장', '미운용', '불용대기', '불용확정'] %}
+                                            <option value="{{ opt }}" {% if s_f_status == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_f_status and s_f_status not in ['운용', '예비', '유휴', '입고', '고장', '미운용', '불용대기', '불용확정'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_f_status_direct" class="form-control {{ 'd-none' if not s_f_status or s_f_status in ['운용', '예비', '유휴', '입고', '고장', '미운용', '불용대기', '불용확정'] else '' }}" value="{{ s_f_status if s_f_status and s_f_status not in ['운용', '예비', '유휴', '입고', '고장', '미운용', '불용대기', '불용확정'] else '' }}">
+                                    <input type="hidden" name="s_f_status" id="s_f_status" value="{{ s_f_status or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">용도</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_purpose_direct', 's_purpose')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['AP', 'DB', 'DEV', 'GW', 'WAS', 'WEB'] %}
+                                            <option value="{{ opt }}" {% if s_purpose == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_purpose and s_purpose not in ['AP', 'DB', 'DEV', 'GW', 'WAS', 'WEB'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_purpose_direct" class="form-control {{ 'd-none' if not s_purpose or s_purpose in ['AP', 'DB', 'DEV', 'GW', 'WAS', 'WEB'] else '' }}" value="{{ s_purpose if s_purpose and s_purpose not in ['AP', 'DB', 'DEV', 'GW', 'WAS', 'WEB'] else '' }}">
+                                    <input type="hidden" name="s_purpose" id="s_purpose" value="{{ s_purpose or '' }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold">자산보유팀</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_team_direct', 's_team')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}
+                                            <option value="{{ opt }}" {% if s_team == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_team and s_team not in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_team_direct" class="form-control {{ 'd-none' if not s_team or s_team in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] else '' }}" value="{{ s_team if s_team and s_team not in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] else '' }}">
+                                    <input type="hidden" name="s_team" id="s_team" value="{{ s_team or '' }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">표준서비스</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_svc_std_direct', 's_svc_std')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}
+                                            <option value="{{ opt }}" {% if s_svc_std == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_svc_std and s_svc_std not in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_svc_std_direct" class="form-control {{ 'd-none' if not s_svc_std or s_svc_std in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] else '' }}" value="{{ s_svc_std if s_svc_std and s_svc_std not in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] else '' }}">
+                                    <input type="hidden" name="s_svc_std" id="s_svc_std" value="{{ s_svc_std or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">단위서비스</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_svc_unit_direct', 's_svc_unit')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}
+                                            <option value="{{ opt }}" {% if s_svc_unit == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_svc_unit and s_svc_unit not in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_svc_unit_direct" class="form-control {{ 'd-none' if not s_svc_unit or s_svc_unit in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] else '' }}" value="{{ s_svc_unit if s_svc_unit and s_svc_unit not in ['CATEGORY1', 'CATEGORY2', 'CATEGORY3'] else '' }}">
+                                    <input type="hidden" name="s_svc_unit" id="s_svc_unit" value="{{ s_svc_unit or '' }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">제조사</label>
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" onchange="toggleDirectInput(this, 's_manuf_direct', 's_manuf')">
+                                        <option value="">전체</option>
+                                        {% for opt in ['DELL', 'HP', 'IBM', 'SUN'] %}
+                                            <option value="{{ opt }}" {% if s_manuf == opt %}selected{% endif %}>{{ opt }}</option>
+                                        {% endfor %}
+                                        <option value="DIRECT" {% if s_manuf and s_manuf not in ['DELL', 'HP', 'IBM', 'SUN'] %}selected{% endif %}>직접 입력</option>
+                                    </select>
+                                    <input type="text" id="s_manuf_direct" class="form-control {{ 'd-none' if not s_manuf or s_manuf in ['DELL', 'HP', 'IBM', 'SUN'] else '' }}" value="{{ s_manuf if s_manuf and s_manuf not in ['DELL', 'HP', 'IBM', 'SUN'] else '' }}">
+                                    <input type="hidden" name="s_manuf" id="s_manuf" value="{{ s_manuf or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">OS</label>
+                                <input type="text" name="s_os" class="form-control form-control-sm" value="{{ s_os or '' }}">
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary w-100" onclick="prepareSearch()">
+                            <i class="bi bi-search me-1"></i>검색 적용
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="ms-1 text-muted small fw-bold">총 {{ total_count }}건</div>
+
+        {% if total_pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0 justify-content-end">
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/tdems/list?page={{ current_page - 1 }}&q={{ keyword or '' }}&field={{ field }}&sort={{ sort or '' }}&order={{ order or '' }}&limit={{ limit }}&s_hostname={{ s_hostname or '' }}&s_ip={{ s_ip or '' }}&s_type={{ s_type or '' }}&s_ma={{ s_ma or '' }}&s_status={{ s_status or '' }}&s_f_status={{ s_f_status or '' }}&s_purpose={{ s_purpose or '' }}&s_team={{ s_team or '' }}&s_svc_std={{ s_svc_std or '' }}&s_svc_unit={{ s_svc_unit or '' }}&s_manuf={{ s_manuf or '' }}&s_model={{ s_model or '' }}&s_os={{ s_os or '' }}"><i class="bi bi-chevron-left"></i> 이전</a>
+                </li>
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == current_page %}active{% endif %}">
+                    <a class="page-link" href="/tdems/list?page={{ p }}&q={{ keyword or '' }}&field={{ field }}&sort={{ sort or '' }}&order={{ order or '' }}&limit={{ limit }}&s_hostname={{ s_hostname or '' }}&s_ip={{ s_ip or '' }}&s_type={{ s_type or '' }}&s_ma={{ s_ma or '' }}&s_status={{ s_status or '' }}&s_f_status={{ s_f_status or '' }}&s_purpose={{ s_purpose or '' }}&s_team={{ s_team or '' }}&s_svc_std={{ s_svc_std or '' }}&s_svc_unit={{ s_svc_unit or '' }}&s_manuf={{ s_manuf or '' }}&s_model={{ s_model or '' }}&s_os={{ s_os or '' }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/tdems/list?page={{ current_page + 1 }}&q={{ keyword or '' }}&field={{ field }}&sort={{ sort or '' }}&order={{ order or '' }}&limit={{ limit }}&s_hostname={{ s_hostname or '' }}&s_ip={{ s_ip or '' }}&s_type={{ s_type or '' }}&s_ma={{ s_ma or '' }}&s_status={{ s_status or '' }}&s_f_status={{ s_f_status or '' }}&s_purpose={{ s_purpose or '' }}&s_team={{ s_team or '' }}&s_svc_std={{ s_svc_std or '' }}&s_svc_unit={{ s_svc_unit or '' }}&s_manuf={{ s_manuf or '' }}&s_model={{ s_model or '' }}&s_os={{ s_os or '' }}">다음 <i class="bi bi-chevron-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0">
+        <form id="deleteForm" action="/tdems/delete" method="post">
+            <input type="hidden" name="reason" id="deleteReason">
+            
+            <div class="table-wrapper">
+                <button type="button" class="scroll-btn left" 
+                        onmousedown="startScroll(-1)" 
+                        onmouseup="stopScroll()" 
+                        onmouseleave="stopScroll()">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                
+                <div class="table-scroll-container" id="tableContainer">
+                    <table class="table table-hover table-asset mb-0">
+                        <thead>
+                            <tr>
+                                <th class="col-chk">
+                                    <input type="checkbox" class="form-check-input" id="checkAll" onclick="toggleAll(this)">
+                                </th>
+
+                                {% macro sort_th(label, col_name) %}
+                                <th>
+                                    <a href="/tdems/list?page=1&q={{ keyword or '' }}&field={{ field }}&sort={{ col_name }}&order={{ 'desc' if sort == col_name and order == 'asc' else 'asc' }}&limit={{ limit }}&s_hostname={{ s_hostname or '' }}&s_ip={{ s_ip or '' }}&s_type={{ s_type or '' }}&s_ma={{ s_ma or '' }}&s_status={{ s_status or '' }}&s_f_status={{ s_f_status or '' }}&s_purpose={{ s_purpose or '' }}&s_team={{ s_team or '' }}&s_svc_std={{ s_svc_std or '' }}&s_svc_unit={{ s_svc_unit or '' }}&s_manuf={{ s_manuf or '' }}&s_model={{ s_model or '' }}&s_os={{ s_os or '' }}" class="sort-link">
+                                        {{ label }}
+                                        {% if sort == col_name %}
+                                            {% if order == 'asc' %}<i class="bi bi-caret-up-fill sort-active sort-icon"></i>{% else %}<i class="bi bi-caret-down-fill sort-active sort-icon"></i>{% endif %}
+                                        {% else %}<i class="bi bi-filter sort-icon"></i>{% endif %}
+                                    </a>
+                                </th>
+                                {% endmacro %}
+
+                                {{ sort_th('전원', 'power') }}
+                                {{ sort_th('상태', 'status') }}
+                                {{ sort_th('MA', 'ma') }}
+                                {{ sort_th('설비바코드', 'barcode') }}
+                                {{ sort_th('종류', 'type') }}
+                                {{ sort_th('위치', 'location') }}
+                                {{ sort_th('호스트명', 'hostname') }}
+                                {{ sort_th('IP', 'ip') }}
+                                {{ sort_th('제조사', 'manufacturer') }}
+                                {{ sort_th('모델명', 'model') }}
+                                {{ sort_th('S/N', 'sn') }}
+                                {{ sort_th('입고년월', 'receipt') }}
+                                {{ sort_th('OS', 'os') }}
+                                {{ sort_th('CPU타입', 'cpu_type') }}
+                                
+                                {{ sort_th('CPU 수량/코어', 'cpu_qty') }}
+                                {{ sort_th('Memory', 'memory') }}
+                                {{ sort_th('SWAP', 'swap') }}
+                                {{ sort_th('Disk (SSD/HDD)', 'disk') }}
+                                
+                                {{ sort_th('용도', 'purpose') }}
+                                {{ sort_th('자산보유팀', 'team') }}
+                                {{ sort_th('표준서비스', 'standard_service') }}
+                                {{ sort_th('단위서비스', 'unit_service') }}
+                                <th style="width: 60px;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if assets %}
+                                {% for asset in assets %}
+                                <tr>
+                                    <td class="text-center col-chk">
+                                        <input type="checkbox" name="asset_ids[]" value="{{ asset.asset_id }}" class="form-check-input asset-chk">
+                                    </td>
+
+                                    <td class="text-center">
+                                        {% if asset.status == 'ON' %}<span class="badge badge-status-ok">ON</span>
+                                        {% elif asset.status == 'OFF' %}<span class="badge badge-status-off">OFF</span>{% endif %}
+                                    </td>
+
+                                    <td class="text-center">
+                                        {% if asset.facility_status %}<span class="badge {{ 'bg-danger' if asset.facility_status == '운용' else 'bg-secondary' }}">{{ asset.facility_status }}</span>{% endif %}
+                                    </td>
+
+                                    <td class="text-center">{{ asset.ma or '-' }}</td>
+                                    
+                                    <td class="text-center">
+                                        {% if asset.equip_barcode %}
+                                            <a href="#" onclick="showBarcodeModal('{{ asset.equip_barcode }}'); return false;" class="text-decoration-none fw-bold barcode-link">
+                                                {{ asset.equip_barcode }} <i class="bi bi-search" style="font-size:0.7em; color:#6c757d;"></i>
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-center">{{ asset.asset_type or '-' }}</td>
+                                    
+                                    <td class="text-center">
+                                        {% if asset.rack_location %}
+                                            <a href="/tdems/rack?rack={{ asset.rack_location }}&id={{ asset.asset_id }}" class="link-rack">
+                                                {{ asset.rack_location }}
+                                                {% if asset.mounted_location %} {{ asset.mounted_location }}{% endif %}
+                                            </a>
+                                        {% else %}-{% endif %}
+                                    </td>
+                                    
+                                    <td class="fw-bold">
+                                        <a href="#" onclick="openDetailModal('{{ asset.asset_id }}'); return false;" class="text-decoration-none text-info">
+                                            {{ asset.hostname }}
+                                        </a>
+                                    </td>
+                                    
+                                    <td>
+                                        {% if asset.ip %}
+                                            {{ asset.ip.split(',') | join(', ') }}
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="fw-bold">{{ asset.manufacturer }}</td>
+
+                                    <td class="text-muted small">{{ asset.model_name }}</td>
+                                    
+                                    <td>{{ asset.serial_number or '-' }}</td>
+                                    <td class="text-center">{{ asset.receipt_ym or '-' }}</td>
+                                    <td>{{ asset.os }}</td>
+                                    
+                                    <td>{{ asset.cpu_type or '-' }}</td>
+
+                                    <td class="text-center">
+                                        {% if asset.cpu_qty or asset.cpu_core %}
+                                            {{ asset.cpu_qty }}ea / {{ asset.cpu_core }}C
+                                        {% else %}-{% endif %}
+                                    </td>
+                                    
+                                    <td class="spec-cell">{% for mem in asset.memories %}<div class="d-inline-block me-2">{{ mem.capacity }} x {{ mem.quantity }}</div>{% endfor %}</td>
+                                    <td>{{ asset.swap_size or '-' }}</td>
+                                    
+                                    <td class="spec-cell">
+                                        {% for ssd in asset.ssds %}<span class="me-2"><span class="badge bg-secondary" style="font-size:0.6em">SSD</span> {{ ssd.capacity }} x {{ ssd.quantity }}</span>{% endfor %}
+                                        {% for hdd in asset.hdds %}<span class="me-2"><span class="badge bg-light text-dark border" style="font-size:0.6em">HDD</span> {{ hdd.capacity }} x {{ hdd.quantity }}</span>{% endfor %}
+                                    </td>
+
+                                    <td>{{ asset.purpose }}</td>
+                                    
+                                    <td>{{ asset.own_team }}</td>
+                                    <td>{{ asset.standard_service }}</td>
+                                    <td>{{ asset.unit_service }}</td>
+                                    
+                                    <td class="text-center"><a href="/tdems/write?id={{ asset.asset_id }}" class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.75rem;">수정</a></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="24" class="text-center py-5 text-muted">등록된 장비가 없습니다.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button type="button" class="scroll-btn right" 
+                        onmousedown="startScroll(1)" 
+                        onmouseup="stopScroll()" 
+                        onmouseleave="stopScroll()">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal fade" id="assetDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>장비 상세 정보</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="assetDetailContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-secondary">
+                    <a href="#" id="btnModalEdit" class="btn btn-primary btn-sm px-3"><i class="bi bi-pencil-square me-1"></i>수정</a>
+                    <button type="button" id="btnModalDelete" class="btn btn-danger btn-sm px-3"><i class="bi bi-trash me-1"></i>삭제</button>
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="barcodeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-secondary">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-upc-scan me-2"></i>바코드 확인 (PDF417)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <canvas id="pdf417Canvas"></canvas>
+                    <div id="barcodeText" class="mt-3 fw-bold fs-5 text-primary"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="manualBarcodeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold fs-6">바코드 생성 (PDF417)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label small text-muted">변환할 코드를 입력하세요</label>
+                    <input type="text" id="manualBarcodeInput" class="form-control" placeholder="설비바코드 입력 후 생성" onkeyup="if(window.event.keyCode==13){generateManualBarcode()}">
+                </div>
+                <div class="modal-footer p-1">
+                    <button type="button" class="btn btn-primary btn-sm w-100" onclick="generateManualBarcode()">생성</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="statsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-secondary shadow">
+                <div class="modal-header bg-dark text-white border-secondary">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pie-chart-fill text-info me-2"></i>TDEMS 장비 통계 대시보드</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-body-tertiary">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card border-secondary shadow-sm h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-center mb-3">장비 종류별 분포</h6>
+                                    <div style="position: relative; height: 450px;"><canvas id="chartType"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-secondary shadow-sm h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-center mb-3">제조사별 점유율</h6>
+                                    <div style="position: relative; height: 450px;"><canvas id="chartManuf"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-secondary shadow-sm h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-center mb-3">설비 상태별 현황</h6>
+                                    <div style="position: relative; height: 450px;"><canvas id="chartStatus"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/static/vendor/jquery/chart.js"></script>
+<script src="/static/vendor/jquery/chartjs-plugin-datalabels.js"></script>
+<script src="/static/js/tdems/bwip-js-min.js"></script>
+<script src="/static/js/tdems/tdems_list.js"></script>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap-icons/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/css/pretendard.css">
+<link rel="stylesheet" href="/static/css/board/board.css">
+<link rel="stylesheet" href="/static/vendor/d2coding/d2coding.css">
+<link rel="stylesheet" href="/static/css/board/board_write.css">
+
+<style>
+    .ck-editor__editable_inline {
+        min-height: 300px;
+        font-family: '굴림', Gulim, sans-serif !important;
+        font-size: 12px !important;
+    }
+
+    .ck-editor__editable {
+        line-height: 1.4; 
+        letter-spacing: -0.5px;
+        word-break: break-all;
+    }
+    .ck-editor__editable p {
+        margin-bottom: 0.1em;
+        min-height: 1.4em;
+    }
+
+    .ck-editor__editable.ck-focused:not(.ck-editor__nested-editable) {
+        border: 1px solid #ccced1 !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    .ck.ck-powered-by {
+        display: none !important;
+    }
+
+    [data-bs-theme="dark"] .ck.ck-editor__main > .ck-editor__editable {
+        background-color: #212529 !important;
+        color: #f8f9fa !important;
+    }
+    [data-bs-theme="dark"] .ck.ck-editor__main > .ck-editor__editable.ck-focused {
+        border-color: #495057 !important; 
+    }
+
+    [data-bs-theme="dark"] .ck.ck-toolbar,
+    [data-bs-theme="dark"] .ck.ck-dropdown__panel,
+    [data-bs-theme="dark"] .ck.ck-balloon-panel,
+    [data-bs-theme="dark"] .ck.ck-balloon-panel .ck-form {
+        background-color: #343a40 !important;
+        border-color: #495057 !important;
+    }
+
+    [data-bs-theme="dark"] .ck.ck-button:not(.ck-color-grid__tile) {
+        background-color: transparent !important;
+        color: #f8f9fa !important;
+    }
+    [data-bs-theme="dark"] .ck.ck-button:not(.ck-color-grid__tile):hover,
+    [data-bs-theme="dark"] .ck.ck-button.ck-on:not(.ck-color-grid__tile) {
+        background-color: #495057 !important; 
+        color: #ffffff !important; 
+    }
+
+    [data-bs-theme="dark"] .ck.ck-dropdown__button {
+        background-color: #2b3035 !important;
+        border: 1px solid #495057 !important;
+        color: #f8f9fa !important;
+    }
+    [data-bs-theme="dark"] .ck.ck-dropdown__button:hover {
+        background-color: #495057 !important;
+    }
+
+    [data-bs-theme="dark"] .ck-icon * {
+        fill: currentColor !important;
+    }
+
+    [data-bs-theme="dark"] .ck-list {
+        background-color: #343a40 !important;
+    }
+    [data-bs-theme="dark"] .ck-list__item__button:hover {
+        background-color: #0d6efd !important;
+    }
+    [data-bs-theme="dark"] .ck-list__item__button:hover .ck-button__label,
+    [data-bs-theme="dark"] .ck-list__item__button:hover * {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .ck-list__item__button .ck-button__label,
+    [data-bs-theme="dark"] .ck-label,
+    [data-bs-theme="dark"] .ck-form__header__label,
+    [data-bs-theme="dark"] .ck-color-grid__label,
+    [data-bs-theme="dark"] .ck-labeled-field-view__status {
+        color: #dee2e6 !important;
+    }
+
+    [data-bs-theme="dark"] .ck-insert-table-dropdown__label {
+        color: #ffffff !important;
+        font-weight: bold !important;
+    }
+
+    [data-bs-theme="dark"] .ck-color-grid__tile {
+        border-color: #495057 !important;
+    }
+    [data-bs-theme="dark"] .ck-color-grid__tile:hover {
+        border-color: #f8f9fa !important;
+        transform: scale(1.1);
+    }
+
+    [data-bs-theme="dark"] .ck-input,
+    [data-bs-theme="dark"] .ck-input-text {
+        background-color: #2b3035 !important;
+        color: #f8f9fa !important;
+        border: 1px solid #495057 !important;
+    }
+    [data-bs-theme="dark"] .ck-input:focus {
+        border-color: #0d6efd !important;
+    }
+
+    [data-bs-theme="dark"] .ck-insert-table-dropdown__grid-box {
+        background-color: #212529 !important; 
+        border-color: #495057 !important;
+    }
+    [data-bs-theme="dark"] .ck-insert-table-dropdown__grid-box.ck-on {
+        background-color: #0d6efd !important; 
+        border-color: #0a58ca !important;
+    }
+
+    [data-bs-theme="dark"] .ck-tooltip .ck-tooltip__text {
+        background-color: #212529 !important;
+        color: #f8f9fa !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-body py-3 border-bottom">
+            <h4 class="fw-bold m-0"><i class="bi bi-pencil-square me-2 text-primary"></i> {% if mode == 'edit' %}게시글 수정{% else %}새 글 작성{% endif %}</h4>
+        </div>
+        <div class="card-body p-4">
+            <input type="hidden" id="mode" value="{{ mode }}">
+            <input type="hidden" id="boardCode" value="{{ board.code }}">
+            <input type="hidden" id="postId" value="{{ post.id if post else '' }}">
+
+            {% if board.category_list %}
+            <div class="mb-3">
+                <select class="form-select form-select-lg fw-bold text-primary" id="category" name="category">
+                    <option value="" selected>-- 말머리 선택 --</option>
+                    {% for cat in board.category_list.split(',') %}
+                        {% set cat_val = cat.strip() %}
+                        <option value="{{ cat_val }}" {% if post and post.category == cat_val %}selected{% endif %}>
+                            {{ cat_val }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="mb-4"><input type="text" class="form-control form-control-lg fw-bold" id="title" placeholder="제목을 입력하세요" value="{{ post.title if post else '' }}"></div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4"><div class="form-floating"><input type="text" class="form-control" id="writer" placeholder="작성자" value="{{ post.writer if post else '' }}"><label for="writer">작성자 이름</label></div></div>
+                
+                <div class="col-md-4" id="passwordWrapper">
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="password" placeholder="비밀번호">
+                        <label for="password" class="text-danger">비밀번호 (필수)</label>
+                    </div>
+                </div>
+
+                <div class="col-md-4 d-flex align-items-center ps-4">
+                    <div class="form-check form-switch me-4"><input class="form-check-input" type="checkbox" id="isSecret" {% if post and post.is_secret %}checked{% endif %}><label class="form-check-label" for="isSecret"><i class="bi bi-lock-fill"></i> 비밀글</label></div>
+                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="isNotice" {% if post and post.is_notice %}checked{% endif %}><label class="form-check-label fw-bold text-danger" for="isNotice"><i class="bi bi-megaphone-fill"></i> 공지사항</label></div>
+                </div>
+            </div>
+
+            <div class="mb-3"><textarea id="summernote">{{ post.content if post else '' }}</textarea></div>
+            <div id="existingFilesArea" class="mb-2"></div>
+            <input type="hidden" id="existingFilesData" value="">
+            <div id="attachedFilesArea" class="mb-4"></div>
+            <input type="file" id="hiddenFileInput" style="display: none;">
+
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" id="btnAttachFile"><i class="bi bi-paperclip"></i> 파일 첨부</button>
+                    <span class="text-primary small fw-bold" id="fileStatus"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/board/{{ board.code }}" class="btn btn-light border px-4">취소</a>
+                    <button type="button" class="btn btn-primary px-5 fw-bold" id="btnSave"><i class="bi bi-check-lg"></i> 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/vendor/jquery/jquery.min.js"></script>
+<script src="/static/vendor/ckeditor5/ckeditor.js?v=superbuild"></script>
+<script src="/static/vendor/ckeditor5/translations/ko.js"></script>
+<script src="/static/js/board/board_write.js"></script>
+{% endblock %}
